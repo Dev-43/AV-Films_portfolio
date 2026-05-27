@@ -1,0 +1,123 @@
+# Node modules
+node_modules/
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+.dist/
+
+# Production
+/.vercel/
+.vercel_build_output/
+
+# Local env files — keep examples if present
+.env*
+!.env.example
+
+# Next.js recommended env ignores
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime files
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Testing
+.jest/
+jest-cache/
+
+# Cache
+.cache/
+.parcel-cache/
+/.turbo/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Sensitive keys and certificates
+*.key
+*.pem
+*.p12
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build output of static site generators
+public/.cache/
+
+# Misc
+.history/
+.envrc
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
