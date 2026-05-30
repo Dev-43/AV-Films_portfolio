@@ -144,3 +144,58 @@
 > ```
 
 ---
+## Mobile-First Rules (apply to every section, no exceptions)
+
+### Layout
+- Every section must work on 375px width minimum (iPhone SE)
+- Use mobile-first Tailwind — base styles are mobile, scale up with md: and lg:
+- No horizontal overflow on any section — test with overflow-x: hidden on body
+- All flex/grid layouts stack vertically on mobile unless specified otherwise
+
+### Typography Scale
+- Display headings (Cormorant Garamond): clamp(2rem, 5vw, 4rem)
+- Section headings: clamp(1.5rem, 3.5vw, 2.5rem)
+- Body text: 14px mobile, 16px desktop
+- Mono labels: 9px mobile, 10px desktop
+- Never use fixed px values for headings — always clamp()
+
+### Touch & Interaction
+- All clickable elements minimum 44x44px tap target
+- No hover-only interactions on mobile — all hover states need a touch equivalent
+- Mouse parallax: always disabled on touch devices via window.matchMedia('(hover: none)')
+- Cursor effects: disabled on touch devices
+
+### 3D & Animation Performance
+- Three.js scenes: always check isMobile before mount
+  - Mobile: reduce geometry segments by 50%
+  - Mobile: reduce particle count to 200 max
+  - Mobile: disable mouse parallax
+  - Mobile: simplify or replace complex scroll-scrubbed 3D animations with CSS alternatives
+- GSAP ScrollTrigger pin: never use on mobile — pinning breaks mobile scroll momentum
+  Replace with standard vertical scroll reveal instead
+- Film grain: use CSS only (SVG filter), never a canvas element — canvas grain kills mobile performance
+
+### Section-Specific Mobile Behavior
+| Section | Desktop | Mobile |
+|---|---|---|
+| Hero | Two orbs side by side | Orbs stacked vertically, 60% size |
+| PhotoWorldIntro | 3D camera full scroll rig | Simplified CSS animation, camera still visible but no scroll-scrub |
+| PhotoGallery | Pinned horizontal scroll | Native horizontal swipe with overflow-x: auto, snap-x mandatory |
+| Filmmakers | Side by side portrait cards | Stacked vertically, full width |
+| VideoWorldIntro | 3D film reel scroll rig | Simplified, static 3D with idle rotation only |
+| VideoGallery | 3-4 column masonry grid | Single column, full width cards |
+| InstagramFeed | 3 column grid | 2 column grid |
+| InquirySection | Full multi-step form | Same form, full width, larger tap targets |
+| Footer | Horizontal layout | Stacked vertical |
+
+### Images & Media
+- Always use next/image with proper width and height props
+- Never autoplay video on mobile — require user interaction
+- Provide loading="lazy" on all images below the fold
+
+### Testing Breakpoints
+Always verify at these widths before marking a section complete:
+- 375px (iPhone SE — minimum)
+- 390px (iPhone 14)
+- 768px (iPad — transition point)
+- 1280px (desktop standard)
