@@ -270,4 +270,62 @@ Always verify at these widths before marking a section complete:
  - Never leave an image src completely undefined — always use the placeholder path
  ```
 
----
+
+## Data Layer — Source of Truth
+
+All content lives in `src/data/`. 
+Components never hardcode content — always import from data files.
+When a value is unknown, use the placeholder conventions below.
+When data is confirmed later, only the data file changes — 
+no component changes needed.
+
+### Data Files
+| File | Purpose |
+|---|---|
+| `src/data/photos.ts` | Product photography portfolio |
+| `src/data/videos.ts` | Video category templates |
+| `src/data/filmmakers.ts` | Owner/team profile data |
+| `src/data/instagram.ts` | Studio Instagram config |
+
+### Placeholder Conventions in Data Files
+- Unknown name: `''` with comment `// TODO: Add name`
+- Unknown URL: `'#'` with comment `// TODO: Add URL`
+- Unknown video link: `''` (empty string) with comment `// TODO: Add video URL`
+- Unknown Instagram: `'@avfilms'` with comment `// TODO: Confirm handle`
+- Images: always `'/images/placeholder.svg'` with `unoptimized` prop
+
+### Photo Aspect Ratios
+Each photo has an `aspect` field: `'square' | 'portrait' | 'landscape'`
+- `landscape` → wider than tall, hero/feature images
+- `square` → equal dimensions, standard product shot
+- `portrait` → taller than wide, vertical product shot
+This field controls sizing in both desktop horizontal scroll
+and mobile two-column grid — never hardcode sizes in components.
+
+### Video URL Handling
+If `videoUrl` is empty string `''`:
+- Show "Coming Soon" state in the modal
+- Never show a broken embed
+- Always show WhatsApp CTA in the coming soon state
+
+### Filmmaker Contact Links
+Each filmmaker has `contacts.instagram` and `contacts.whatsapp`
+If value is `'#'` — hide the button entirely, do not show a dead link
+
+## Content — AV Films Studio
+
+### Team
+- **Cinematographer & Photographer**: Name TBC
+  World: Photo (emerald accent)
+- **Vedant**: Editor & Production Assistant  
+  World: Video (gold accent)
+
+### Studio Contact
+- WhatsApp: `https://wa.me/917517218149`
+- WhatsApp 2: `https://wa.me/917517218150`
+- Instagram: `'#'` // TODO: Confirm handle
+- Location: Pimpri, Pune, Maharashtra
+
+### Philosophy Lines (placeholder — confirm with client)
+- Cinematographer: "Every frame is a decision. Every decision tells a story."
+- Vedant: "The edit is where the story truly begins."
