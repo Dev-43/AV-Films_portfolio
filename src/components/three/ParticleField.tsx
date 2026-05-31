@@ -1,32 +1,36 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 export function ParticleField() {
   const pointsRef = useRef<THREE.Points>(null)
   const elapsed = useRef(0)
-  const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => {
-    setIsMobile(window.matchMedia('(max-width: 768px)').matches)
-  }, [])
+  // Generate positions once using a stable seed approach
+  const positions = useMemo(() => {
+    const count =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 768px)').matches
+        ? 200
+        : 600
 
-  const geometry = useMemo(() => {
-    const count = isMobile ? 200 : 600
-    const positions = new Float32Array(count * 3)
-
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 16
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10
-      positions[i * 3 + 2] = Math.random() * 6 - 4
+    // Use a seeded sequence so positions are stable across renders
+    const arr = new Float32Array(count * 3)
+    // Simple LCG pseudo-random — deterministic, no Math.random
+    let seed = 12345
+    const rand = () => {
+      seed = (seed * 1664525 + 1013904223) & 0xffffffff
+      return (seed >>> 0) / 0xffffffff
     }
-
-    const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    return geo
-  }, [isMobile])
+    for (let i = 0; i < count; i++) {
+      arr[i * 3]     = (rand() - 0.5) * 16
+      arr[i * 3 + 1] = (rand() - 0.5) * 10
+      arr[i * 3 + 2] = rand() * 6 - 4
+    }
+    return arr
+  }, [])
 
   useFrame((_, delta) => {
     elapsed.current += delta
@@ -38,7 +42,13 @@ export function ParticleField() {
   })
 
   return (
-    <points ref={pointsRef} geometry={geometry}>
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+        />
+      </bufferGeometry>
       <pointsMaterial
         color="#f5f0e8"
         size={0.015}

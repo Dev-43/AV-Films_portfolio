@@ -1,25 +1,39 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  createContext,
+  useContext,
+} from 'react'
 import Lenis from 'lenis'
 import { gsap } from 'gsap'
-import { LenisContext } from '@/lib/lenis'
 
-type SmoothScrollProps = {
-  children: ReactNode
+const LenisContext = createContext<Lenis | null>(null)
+
+export function useLenisContext() {
+  return useContext(LenisContext)
 }
 
-export default function SmoothScroll({ children }: SmoothScrollProps) {
+export default function SmoothScroll({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const lenisRef = useRef<Lenis | null>(null)
   const [lenis, setLenis] = useState<Lenis | null>(null)
 
   useEffect(() => {
     const instance = new Lenis({
       duration: 1.2,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      easing: (t: number) =>
+        Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     })
 
-    setLenis(instance)
+    lenisRef.current = instance
+    queueMicrotask(() => setLenis(instance))
 
     const onTick = (time: number) => {
       instance.raf(time * 1000)
@@ -31,11 +45,14 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
     return () => {
       gsap.ticker.remove(onTick)
       instance.destroy()
-      setLenis(null)
+      lenisRef.current = null
+      queueMicrotask(() => setLenis(null))
     }
   }, [])
 
   return (
-    <LenisContext.Provider value={lenis}>{children}</LenisContext.Provider>
+    <LenisContext.Provider value={lenis}>
+      {children}
+    </LenisContext.Provider>
   )
 }
