@@ -24,12 +24,12 @@ export function HeroOrbs() {
 
     if (isMobile.current) {
       if (leftMeshRef.current) {
-        leftMeshRef.current.position.set(0, 1.2, 0)
-        leftMeshRef.current.scale.setScalar(0.6)
+        leftMeshRef.current.position.set(-1.1, 0, 0)
+        leftMeshRef.current.scale.setScalar(0.45)
       }
       if (rightMeshRef.current) {
-        rightMeshRef.current.position.set(0, -1.2, 0)
-        rightMeshRef.current.scale.setScalar(0.6)
+        rightMeshRef.current.position.set(1.1, 0, 0)
+        rightMeshRef.current.scale.setScalar(0.45)
       }
     }
 
@@ -64,7 +64,7 @@ export function HeroOrbs() {
       )
     }
 
-    const baseScale = isMobile.current ? 0.6 : 1.0
+    const baseScale = isMobile.current ? 0.45 : 1.0
 
     if (leftMeshRef.current) {
       leftMeshRef.current.rotation.y += 0.003

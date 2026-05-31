@@ -199,3 +199,75 @@ Always verify at these widths before marking a section complete:
 - 390px (iPhone 14)
 - 768px (iPad — transition point)
 - 1280px (desktop standard)
+
+## Known Dev Warnings (do not attempt to fix)
+- THREE.Clock deprecation warning — comes from Three.js/R3F 
+  internals, not our code. Will be resolved when three/r3f 
+  packages update. Ignore it.
+- 304 HMR errors on network IP — Turbopack dev-only issue 
+  when accessing via local network IP. Does not affect 
+  production build.
+
+---
+
+ ```
+ ## Placeholder Rules — Media & Links
+
+ All media content and external links will be filled in later.
+ During development, use these exact placeholders consistently:
+
+ ### Images
+ - Placeholder src: `"/images/placeholder.svg"`
+ - Always include proper alt text describing what the image will be
+ - Always include width and height props on next/image
+ - Example:
+   ```tsx
+   <Image
+     src="/images/placeholder.svg"
+     alt="Portrait photograph by AV Films"
+     width={800}
+     height={600}
+     unoptimized
+   />
+   ```
+
+ ### Videos
+ - Placeholder src: `""`  (empty string)
+ - Placeholder thumbnail: `"/images/placeholder.svg"`
+ - Add a comment above: {/* TODO: Add video URL */}
+ - Example:
+   ```tsx
+   {/* TODO: Add video URL */}
+   <video src="" poster="/images/placeholder.svg" />
+   ```
+
+ ### YouTube / Google Drive Embeds
+ - Placeholder: `""` (empty string for the URL)
+ - Add comment: {/* TODO: Add embed URL */}
+ - Never use a real YouTube URL as placeholder
+
+ ### Instagram Handle
+ - Placeholder: `"@avfilms"` (to be confirmed)
+
+ ### Owner Photos (Filmmakers section)
+ - Placeholder src: `"/images/filmmaker-1.jpg"` and `"/images/filmmaker-2.jpg"`
+ - These will be replaced with real portrait photos
+
+ ### Photo Gallery Images
+ - Use `/images/placeholder.svg` for all gallery items
+ - Keep the category labels and metadata real — only the image src is placeholder
+
+ ### External Links
+ - WhatsApp: `"https://wa.me/917517218149"` — this is real, keep it
+ - Instagram profile: `"https://instagram.com/avfilms"` — placeholder, to be confirmed
+ - All other external links: `"#"` with a comment {/* TODO: Add URL */}
+
+
+
+ ### Never
+ - Never use external URLs like unsplash.com or picsum.photos as placeholders
+ - Never use real client photos without confirmation
+ - Never leave an image src completely undefined — always use the placeholder path
+ ```
+
+---

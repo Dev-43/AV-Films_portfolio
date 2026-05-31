@@ -100,39 +100,43 @@ export default function HeroSection() {
           </p>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center w-full">
-          <div className="flex justify-between w-full max-w-md md:max-w-lg px-6 md:px-8 pointer-events-none">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-px h-8 bg-avEmerald opacity-30" />
-              <span
-                style={{ fontFamily: 'var(--font-display)' }}
-                className="text-avEmerald text-sm md:text-base italic tracking-wider"
-              >
-                Photography
-              </span>
-              <span
-                style={{ fontFamily: 'var(--font-mono)' }}
-                className="text-muted text-[8px] tracking-[0.25em] uppercase opacity-60"
-              >
-                click to enter
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-px h-8 bg-avGold opacity-30" />
-              <span
-                style={{ fontFamily: 'var(--font-display)' }}
-                className="text-avGold text-sm md:text-base italic tracking-wider"
-              >
-                Film & Video
-              </span>
-              <span
-                style={{ fontFamily: 'var(--font-mono)' }}
-                className="text-muted text-[8px] tracking-[0.25em] uppercase opacity-60"
-              >
-                click to enter
-              </span>
-            </div>
+        {/* Orb Labels */}
+        <div className="flex-1 flex items-end justify-between w-full max-w-xs md:max-w-2xl px-6 md:px-16 pb-6 md:pb-8 pointer-events-none">
+
+          {/* Photography — under left orb */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-px h-6 bg-avEmerald opacity-30" />
+            <span
+              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-avEmerald text-sm md:text-base italic tracking-wider"
+            >
+              Photography
+            </span>
+            <span
+              style={{ fontFamily: 'var(--font-mono)' }}
+              className="text-muted text-[8px] tracking-[0.25em] uppercase opacity-60"
+            >
+              click to enter
+            </span>
           </div>
+
+          {/* Film & Video — under right orb */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-px h-6 bg-avGold opacity-30" />
+            <span
+              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-avGold text-sm md:text-base italic tracking-wider"
+            >
+              Film & Video
+            </span>
+            <span
+              style={{ fontFamily: 'var(--font-mono)' }}
+              className="text-muted text-[8px] tracking-[0.25em] uppercase opacity-60"
+            >
+              click to enter
+            </span>
+          </div>
+
         </div>
 
         <div className="flex flex-col items-center gap-2 mb-4">
