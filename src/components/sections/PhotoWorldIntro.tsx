@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useLenis } from '@/lib/lenis'
@@ -12,6 +12,29 @@ const FILM_GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmln
 /** Desktop: viewport heights to pin while beats scrub (4 beats × ~1vh scroll each) */
 const DESKTOP_PIN_SCROLL_VH = 300
 
+const beatContent = [
+  {
+    eyebrow: 'Still Frame',
+    heading: 'The Art of<br /><em>Freezing Time</em>',
+    body: 'Every photograph is a decision made in a fraction of a second. Light, composition, emotion — captured before the moment disappears.',
+  },
+  {
+    eyebrow: 'Through the Lens',
+    heading: 'Light.<br /><em>Composition.</em><br />Story.',
+    body: 'The camera sees what the eye overlooks. We train it to find beauty in the unnoticed, the fleeting, the real.',
+  },
+  {
+    eyebrow: 'The Detail',
+    heading: 'Every frame<br />is <em>intentional</em>',
+    body: 'From aperture to composition — each choice shapes how your story will be remembered.',
+  },
+  {
+    eyebrow: 'AV Films · Photography',
+    heading: 'Your moment,<br />our <em>creativity</em>',
+    body: 'Scroll to explore our product photography — or continue the journey below.',
+  },
+]
+
 export default function PhotoWorldIntro() {
   const lenis = useLenis()
   const sectionRef = useRef<HTMLElement>(null)
@@ -20,8 +43,18 @@ export default function PhotoWorldIntro() {
   const beat2Ref = useRef<HTMLDivElement>(null)
   const beat3Ref = useRef<HTMLDivElement>(null)
   const beat4Ref = useRef<HTMLDivElement>(null)
+  const mobileBeat1Ref = useRef<HTMLDivElement>(null)
+  const mobileBeat2Ref = useRef<HTMLDivElement>(null)
+  const mobileBeat3Ref = useRef<HTMLDivElement>(null)
+  const mobileBeat4Ref = useRef<HTMLDivElement>(null)
+  const mobileBeatsRefs = useMemo(
+    () => [mobileBeat1Ref, mobileBeat2Ref, mobileBeat3Ref, mobileBeat4Ref],
+    []
+  )
+  const isMobileRef = useRef(false)
 
   const [inView, setInView] = useState(false)
+  const [layoutKey, setLayoutKey] = useState(0)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -36,45 +69,49 @@ export default function PhotoWorldIntro() {
   }, [])
 
   useEffect(() => {
-    const section = sectionRef.current
-    const pin = pinRef.current
-    if (!section || !pin || !lenis) return
+    const mq = window.matchMedia('(max-width: 768px)')
+    isMobileRef.current = mq.matches
 
-    const beats = [
-      beat1Ref.current,
-      beat2Ref.current,
-      beat3Ref.current,
-      beat4Ref.current,
-    ].filter((el): el is HTMLDivElement => el !== null)
+    const handleMqChange = (e: MediaQueryListEvent) => {
+      isMobileRef.current = e.matches
+      setLayoutKey((k) => k + 1)
+    }
+
+    mq.addEventListener('change', handleMqChange)
+    return () => mq.removeEventListener('change', handleMqChange)
+  }, [])
+
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section || !lenis) return
 
     const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia()
-
-      mm.add('(max-width: 768px)', () => {
-        beats.forEach((el) => gsap.set(el, { opacity: 0 }))
-
-        beats.forEach((el) => {
+      if (isMobileRef.current) {
+        mobileBeatsRefs.forEach((ref) => {
+          if (!ref.current) return
           gsap.fromTo(
-            el,
-            { opacity: 0, y: 30 },
+            ref.current,
+            { opacity: 0, y: 24 },
             {
               opacity: 1,
               y: 0,
-              duration: 0.8,
+              duration: 0.6,
               scrollTrigger: {
-                trigger: el,
-                start: 'top 85%',
-                end: 'top 55%',
+                trigger: ref.current,
+                start: 'top 75%',
+                end: 'top 35%',
                 toggleActions: 'play none none reverse',
               },
             }
           )
         })
-      })
-
-      mm.add('(min-width: 769px)', () => {
-        const [b1, b2, b3, b4] = beats
-        if (!b1 || !b2 || !b3 || !b4) return
+      } else {
+        const pin = pinRef.current
+        const b1 = beat1Ref.current
+        const b2 = beat2Ref.current
+        const b3 = beat3Ref.current
+        const b4 = beat4Ref.current
+        if (!pin || !b1 || !b2 || !b3 || !b4) return
 
         gsap.set([b1, b2, b3, b4], { opacity: 0 })
 
@@ -90,7 +127,6 @@ export default function PhotoWorldIntro() {
           },
         })
 
-        // Four beats across pinned scroll — each fades in, then out (incl. beat 4)
         tl.fromTo(b1, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0)
           .to(b1, { opacity: 0, duration: 0.15 }, 0.22)
           .fromTo(b2, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.25)
@@ -99,23 +135,45 @@ export default function PhotoWorldIntro() {
           .to(b3, { opacity: 0, duration: 0.15 }, 0.72)
           .fromTo(b4, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.75)
           .to(b4, { opacity: 0, duration: 0.15 }, 0.92)
-      })
+      }
 
       ScrollTrigger.refresh()
     }, section)
 
     return () => ctx.revert()
-  }, [lenis])
+  }, [lenis, layoutKey, mobileBeatsRefs])
 
   return (
     <section
       id="photo-world"
       ref={sectionRef}
       className="relative w-full bg-charcoal overflow-hidden"
+      style={{ minHeight: '400vh' }}
     >
+      {/* Mobile layout — natural document flow */}
+      <div className="block md:hidden">
+        {beatContent.map((beat, i) => (
+          <div
+            key={i}
+            ref={mobileBeatsRefs[i]}
+            className="min-h-screen flex items-center px-6 py-16"
+          >
+            <div>
+              <div className="story-eyebrow">{beat.eyebrow}</div>
+              <h2
+                className="story-heading"
+                dangerouslySetInnerHTML={{ __html: beat.heading }}
+              />
+              <p className="story-body">{beat.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop layout — pinned scroll scrub */}
       <div
         ref={pinRef}
-        className="relative w-full min-h-screen h-screen pointer-events-none"
+        className="hidden md:block relative w-full min-h-screen h-screen pointer-events-none"
       >
         <div
           className="absolute pointer-events-none"
@@ -144,11 +202,7 @@ export default function PhotoWorldIntro() {
         <div className="absolute inset-0 z-10 pointer-events-none">
           <div
             ref={beat1Ref}
-            className="
-              relative w-full min-h-screen flex items-center justify-start px-6 py-24
-              md:absolute md:inset-0 md:min-h-0 md:py-0 md:z-10
-              lg:px-16 xl:px-24
-            "
+            className="absolute inset-0 z-10 flex items-center justify-start px-6 lg:px-16 xl:px-24"
           >
             <div style={{ maxWidth: '480px' }}>
               <div className="story-eyebrow">Still Frame</div>
@@ -167,11 +221,7 @@ export default function PhotoWorldIntro() {
 
           <div
             ref={beat2Ref}
-            className="
-              relative w-full min-h-screen flex items-center justify-end px-6 py-24 text-right
-              md:absolute md:inset-0 md:min-h-0 md:py-0 md:z-20
-              lg:px-16 xl:px-24
-            "
+            className="absolute inset-0 z-20 flex items-center justify-end px-6 text-right lg:px-16 xl:px-24"
           >
             <div style={{ maxWidth: '480px' }}>
               <div
@@ -196,10 +246,7 @@ export default function PhotoWorldIntro() {
 
           <div
             ref={beat3Ref}
-            className="
-              relative w-full min-h-screen flex items-center justify-center px-6 py-24 text-center
-              md:absolute md:inset-0 md:min-h-0 md:py-0 md:z-30
-            "
+            className="absolute inset-0 z-30 flex items-center justify-center px-6 text-center"
           >
             <div style={{ maxWidth: '540px' }}>
               <div
@@ -222,10 +269,7 @@ export default function PhotoWorldIntro() {
 
           <div
             ref={beat4Ref}
-            className="
-              relative w-full min-h-screen flex items-center justify-center px-6 py-24 text-center
-              md:absolute md:inset-0 md:min-h-0 md:py-0 md:z-40
-            "
+            className="absolute inset-0 z-40 flex items-center justify-center px-6 text-center"
           >
             <div style={{ maxWidth: '540px' }}>
               <div

@@ -75,3 +75,10 @@ body {
   font-weight: 300;
   max-width: 420px;
 }
+
+@media (max-width: 768px) {
+  #photo-world {
+    min-height: unset;
+    height: auto;
+  }
+}

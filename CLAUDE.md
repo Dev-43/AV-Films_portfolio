@@ -92,6 +92,15 @@
 > - Canvas wrapper div: `style={{ pointerEvents: 'none' }}` — re-enable only on interactive meshes via R3F event props
 > - Mouse position for parallax: always `useRef<{x:number,y:number}>`, never `useState`
 > - Detect touch/mobile before mount: `window.matchMedia('(hover: none)')` for parallax, `window.matchMedia('(max-width: 768px)')` for particle count
+> - Never use useState for isMobile or isTouch detection
+>   Always use useRef + useEffect + MediaQueryList pattern
+> - Use MediaQueryList.addEventListener('change') to handle
+>   viewport changes (desktop mode toggle in mobile browsers)
+> - Extract position/scale logic into applyMobileLayout() 
+>   function — call from both initial useEffect and change listener
+> - 3D canvas components are always hidden on mobile via
+>   "hidden md:block" wrapper div — never show Three.js canvas
+>   on mobile unless explicitly specified for that section
 >
 > ## Mobile Breakpoints
 > - Mobile: < 768px — reduced particles (200 max), no mouse parallax, stacked layouts, smaller 3D elements
@@ -207,6 +216,10 @@ Always verify at these widths before marking a section complete:
 - 304 HMR errors on network IP — Turbopack dev-only issue 
   when accessing via local network IP. Does not affect 
   production build.
+- "module.register() deprecated" — Node.js internal warning,
+  ignore it
+- tailwind.config.ts module type warning — fixed by adding
+  "type": "module" to package.json
 
 ---
 
@@ -250,7 +263,7 @@ Always verify at these widths before marking a section complete:
  - Placeholder: `"@avfilms"` (to be confirmed)
 
  ### Owner Photos (Filmmakers section)
- - Placeholder src: `"/images/filmmaker-1.jpg"` and `"/images/filmmaker-2.jpg"`
+ - Placeholder src: `"/images/filmmaker-1.svg"` and `"/images/filmmaker-2.svg"`
  - These will be replaced with real portrait photos
 
  ### Photo Gallery Images
@@ -329,3 +342,43 @@ If value is `'#'` — hide the button entirely, do not show a dead link
 ### Philosophy Lines (placeholder — confirm with client)
 - Cinematographer: "Every frame is a decision. Every decision tells a story."
 - Vedant: "The edit is where the story truly begins."
+
+## Completed Sections
+Do not rebuild these. Do not modify unless fixing a bug.
+
+- ✅ Skeleton — 9 section shells, all IDs correct
+- ✅ SmoothScroll — Lenis + GSAP ticker wired
+- ✅ Hero Part 1 — Wordmark, tagline, layout shell
+- ✅ Hero Part 2 — Lenis scroll progress bar (gold)
+- ✅ Hero Part 3 — R3F canvas + ParticleField
+- ✅ Hero Part 4 — HeroOrbs, parallax, click-to-scroll
+- ✅ Hero Fixes — Hydration, mobile orbs, desktop mode toggle
+- ✅ Hero Material — MeshPhysicalMaterial, Environment preset
+- ✅ Data Layer — src/data/ (photos, videos, filmmakers, instagram)
+- ✅ PhotoWorldIntro Part 1 — Story beats, GSAP scroll reveal
+- ✅ PhotoWorldIntro Part 2 — Camera model (to be replaced
+  with aperture iris)
+- ⏳ PhotoWorldIntro Part 2b — Aperture iris (next)
+- ⏳ PhotoWorldIntro Part 3 — Scroll-driven movement
+- ⏳ PhotoGallery
+- ⏳ Filmmakers
+- ⏳ VideoWorldIntro (retro projector)
+- ⏳ VideoGallery
+- ⏳ InstagramFeed
+- ⏳ InquiryForm
+- ⏳ Footer
+
+## Design Decisions Locked
+These are final — do not revisit without user confirmation.
+
+- Theme: Emerald (#50c878) for photo, Gold (#c9a84c) for video
+- Background: Warm charcoal #0d0c0b across ALL sections
+- Photo World 3D: Aperture iris (NOT a camera model)
+- Video World 3D: Retro film projector with spinning reels
+- Photo gallery: Horizontal scroll desktop, two-col mobile grid
+- Photo gallery lightbox: Swipe navigation on mobile
+- Filmmakers transition: Dark fade → portraits emerge from black
+- Filmmaker contacts: Hide button if value is '#'
+- Video modal: Film burn CSS transition, Coming Soon if URL empty
+- Inquiry form: WhatsApp primary + Resend email backup
+- Instagram: Static grid placeholder until handle confirmed

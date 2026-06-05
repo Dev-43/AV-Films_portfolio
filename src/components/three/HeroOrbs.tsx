@@ -18,22 +18,40 @@ export function HeroOrbs() {
 
   const geometry = useMemo(() => new THREE.SphereGeometry(1, 32, 32), [])
 
-  useEffect(() => {
-    isMobile.current = window.matchMedia('(max-width: 768px)').matches
-    isTouch.current = window.matchMedia('(hover: none)').matches
+  const applyMobileLayout = (mobile: boolean) => {
+    if (!leftMeshRef.current || !rightMeshRef.current) return
+    if (mobile) {
+      leftMeshRef.current.position.set(-1.1, 0, 0)
+      leftMeshRef.current.scale.setScalar(0.45)
+      rightMeshRef.current.position.set(1.1, 0, 0)
+      rightMeshRef.current.scale.setScalar(0.45)
+    } else {
+      leftMeshRef.current.position.set(-2.2, 0, 0)
+      leftMeshRef.current.scale.setScalar(1.0)
+      rightMeshRef.current.position.set(2.2, 0, 0)
+      rightMeshRef.current.scale.setScalar(1.0)
+    }
+  }
 
-    if (isMobile.current) {
-      if (leftMeshRef.current) {
-        leftMeshRef.current.position.set(-1.1, 0, 0)
-        leftMeshRef.current.scale.setScalar(0.45)
-      }
-      if (rightMeshRef.current) {
-        rightMeshRef.current.position.set(1.1, 0, 0)
-        rightMeshRef.current.scale.setScalar(0.45)
-      }
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const touchMq = window.matchMedia('(hover: none)')
+
+    isMobile.current = mq.matches
+    isTouch.current = touchMq.matches
+
+    applyMobileLayout(isMobile.current)
+
+    const handleMqChange = (e: MediaQueryListEvent) => {
+      isMobile.current = e.matches
+      applyMobileLayout(e.matches)
     }
 
-    if (isTouch.current) return
+    mq.addEventListener('change', handleMqChange)
+
+    if (isTouch.current) {
+      return () => mq.removeEventListener('change', handleMqChange)
+    }
 
     const onMove = (e: MouseEvent) => {
       mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1
@@ -41,7 +59,10 @@ export function HeroOrbs() {
     }
 
     window.addEventListener('mousemove', onMove)
-    return () => window.removeEventListener('mousemove', onMove)
+    return () => {
+      mq.removeEventListener('change', handleMqChange)
+      window.removeEventListener('mousemove', onMove)
+    }
   }, [])
 
   useEffect(() => {
