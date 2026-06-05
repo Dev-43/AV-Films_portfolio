@@ -1,11 +1,17 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useLenis } from '@/lib/lenis'
 
 gsap.registerPlugin(ScrollTrigger)
+
+const ApertureCanvas = dynamic(
+  () => import('@/components/three/ApertureCanvas'),
+  { ssr: false }
+)
 
 const FILM_GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E")`
 
@@ -39,6 +45,8 @@ export default function PhotoWorldIntro() {
   const lenis = useLenis()
   const sectionRef = useRef<HTMLElement>(null)
   const pinRef = useRef<HTMLDivElement>(null)
+  const irisRef = useRef<HTMLDivElement>(null)
+  const mobileIrisRef = useRef<HTMLDivElement>(null)
   const beat1Ref = useRef<HTMLDivElement>(null)
   const beat2Ref = useRef<HTMLDivElement>(null)
   const beat3Ref = useRef<HTMLDivElement>(null)
@@ -52,9 +60,11 @@ export default function PhotoWorldIntro() {
     []
   )
   const isMobileRef = useRef(false)
+  const openAmountRef = useRef(0)
 
   const [inView, setInView] = useState(false)
   const [layoutKey, setLayoutKey] = useState(0)
+  const [openAmount, setOpenAmount] = useState(0)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -74,6 +84,10 @@ export default function PhotoWorldIntro() {
 
     const handleMqChange = (e: MediaQueryListEvent) => {
       isMobileRef.current = e.matches
+      if (e.matches) {
+        openAmountRef.current = 0
+        setOpenAmount(0)
+      }
       setLayoutKey((k) => k + 1)
     }
 
@@ -87,6 +101,22 @@ export default function PhotoWorldIntro() {
 
     const ctx = gsap.context(() => {
       if (isMobileRef.current) {
+        if (mobileIrisRef.current) {
+          gsap.fromTo(
+            mobileIrisRef.current,
+            { opacity: 0 },
+            {
+              opacity: 1,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top bottom',
+                end: 'top 65%',
+                scrub: 1,
+              },
+            }
+          )
+        }
         mobileBeatsRefs.forEach((ref) => {
           if (!ref.current) return
           gsap.fromTo(
@@ -111,9 +141,11 @@ export default function PhotoWorldIntro() {
         const b2 = beat2Ref.current
         const b3 = beat3Ref.current
         const b4 = beat4Ref.current
-        if (!pin || !b1 || !b2 || !b3 || !b4) return
+        const iris = irisRef.current
+        if (!pin || !b1 || !b2 || !b3 || !b4 || !iris) return
 
-        gsap.set([b1, b2, b3, b4], { opacity: 0 })
+        gsap.set([b2, b3, b4], { opacity: 0 })
+        gsap.set(iris, { opacity: 0 })
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -124,10 +156,18 @@ export default function PhotoWorldIntro() {
             scrub: 1.5,
             anticipatePin: 1,
             invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const newOpen = Math.min(1, self.progress * 1.5)
+              if (Math.abs(newOpen - openAmountRef.current) > 0.01) {
+                openAmountRef.current = newOpen
+                setOpenAmount(newOpen)
+              }
+            },
           },
         })
 
-        tl.fromTo(b1, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0)
+        tl.fromTo(iris, { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0)
+          .fromTo(b1, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0)
           .to(b1, { opacity: 0, duration: 0.15 }, 0.22)
           .fromTo(b2, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.25)
           .to(b2, { opacity: 0, duration: 0.15 }, 0.47)
@@ -150,6 +190,19 @@ export default function PhotoWorldIntro() {
       className="relative w-full bg-charcoal overflow-hidden"
       style={{ minHeight: '400vh' }}
     >
+      <div
+        ref={mobileIrisRef}
+        className="block md:hidden absolute top-1/4 left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{ zIndex: 1, opacity: 0 }}
+      >
+        <div
+          className="w-32 h-32 rounded-full border border-avEmerald opacity-20"
+          style={{
+            boxShadow: '0 0 40px rgba(80,200,120,0.1)',
+          }}
+        />
+      </div>
+
       {/* Mobile layout — natural document flow */}
       <div className="block md:hidden">
         {beatContent.map((beat, i) => (
@@ -173,7 +226,7 @@ export default function PhotoWorldIntro() {
       {/* Desktop layout — pinned scroll scrub */}
       <div
         ref={pinRef}
-        className="hidden md:block relative w-full min-h-screen h-screen pointer-events-none"
+        className="hidden md:block relative w-full min-h-screen h-screen bg-charcoal pointer-events-none"
       >
         <div
           className="absolute pointer-events-none"
@@ -188,7 +241,13 @@ export default function PhotoWorldIntro() {
           }}
         />
 
-        {/* PhotoWorldCamera 3D scene — Part 2 */}
+        <div
+          ref={irisRef}
+          className="absolute inset-0 hidden md:block pointer-events-none bg-charcoal"
+          style={{ zIndex: 1, opacity: 0 }}
+        >
+          <ApertureCanvas openAmount={openAmount} />
+        </div>
 
         <div
           className="absolute inset-0 pointer-events-none"
