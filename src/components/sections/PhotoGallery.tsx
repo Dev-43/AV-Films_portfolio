@@ -27,14 +27,6 @@ export default function PhotoGallery() {
     setSelectedIndex(normalizeIndex(index))
   }
 
-  const goToPrev = () => {
-    setSelectedIndex((prev) => normalizeIndex(prev - 1))
-  }
-
-  const goToNext = () => {
-    setSelectedIndex((prev) => normalizeIndex(prev + 1))
-  }
-
   return (
     <section
       id="photo-gallery"
@@ -71,28 +63,8 @@ export default function PhotoGallery() {
           opacity: 0.7,
         }}
       >
-        03 · Photo Gallery
+        03 - Photo Gallery
       </div>
-
-      <button
-        type="button"
-        aria-label="Previous photo"
-        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-11 h-11 flex items-center justify-center border border-avEmerald/30 rounded-full text-avEmerald hover:border-avEmerald transition-all"
-        style={{ fontFamily: 'var(--font-mono)' }}
-        onClick={goToPrev}
-      >
-        ←
-      </button>
-
-      <button
-        type="button"
-        aria-label="Next photo"
-        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-11 h-11 flex items-center justify-center border border-avEmerald/30 rounded-full text-avEmerald hover:border-avEmerald transition-all"
-        style={{ fontFamily: 'var(--font-mono)' }}
-        onClick={goToNext}
-      >
-        →
-      </button>
 
       <div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"

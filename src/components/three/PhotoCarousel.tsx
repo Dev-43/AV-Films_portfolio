@@ -5,17 +5,18 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { photos } from '@/data/photos'
 import type { AspectRatio } from '@/data/photos'
-import { useLenis } from '@/lib/lenis'
-import { FloatingCamera } from './FloatingCamera'
+// import { FloatingCamera } from './FloatingCamera'
 
 const PHOTO_COUNT = photos.length
-const DESKTOP_RADIUS = 4.5
-const MOBILE_RADIUS = 3.2
+const DISPLAY_CARD_COUNT = Math.max(PHOTO_COUNT * 4, 112)
+const DESKTOP_SPREAD = 0.38
+const MOBILE_SPREAD = 0.32
+const AUTO_SPEED = 0.011
+const MANUAL_SELECT_PAUSE_FRAMES = 90
 
 interface CarouselState {
-  rotation: number
-  targetRotation: number
-  selectedIndex: number
+  offset: number
+  targetOffset: number
 }
 
 interface PhotoCarouselProps {
@@ -23,19 +24,30 @@ interface PhotoCarouselProps {
   onSelect: (index: number) => void
 }
 
-function getPhotoDimensions(aspect: AspectRatio): [number, number] {
-  if (aspect === 'portrait') return [1.4, 2.2]
-  if (aspect === 'landscape') return [2.4, 1.5]
-  return [1.8, 1.8]
+interface PhotoLayout {
+  photoIndex: number
+  width: number
+  height: number
+  phase: number
+  tilt: number
+  lane: number
+  depthShift: number
+  sizeScale: number
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
+function getPhotoDimensions(aspect: AspectRatio): [number, number] {
+  if (aspect === 'portrait') return [1.72, 2.42]
+  if (aspect === 'landscape') return [2.78, 1.86]
+  return [2.08, 2.08]
 }
 
 function normalizeIndex(index: number): number {
   if (!Number.isFinite(index) || PHOTO_COUNT === 0) return 0
   return ((Math.round(index) % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT
+}
+
+function wrapSlot(value: number, count: number): number {
+  return THREE.MathUtils.euclideanModulo(value + count / 2, count) - count / 2
 }
 
 function createPlaceholderTexture(): THREE.CanvasTexture {
@@ -44,11 +56,8 @@ function createPlaceholderTexture(): THREE.CanvasTexture {
   canvas.height = 600
   const ctx = canvas.getContext('2d')
   if (ctx) {
-    ctx.fillStyle = '#2a2826'
+    ctx.fillStyle = '#252321'
     ctx.fillRect(0, 0, 800, 600)
-    ctx.strokeStyle = '#50c878'
-    ctx.lineWidth = 4
-    ctx.strokeRect(40, 40, 720, 520)
     ctx.fillStyle = '#f5f0e8'
     ctx.font = 'bold 32px sans-serif'
     ctx.textAlign = 'center'
@@ -68,12 +77,13 @@ function usePhotoTextures(): THREE.Texture[] {
     loader.setCrossOrigin('anonymous')
 
     return photos.map((photo) => {
-      // SVG cannot be uploaded to WebGL textures (security error).
-      // Raster URLs load asynchronously; placeholder shows until ready.
       if (photo.src.endsWith('.svg')) return placeholder
 
       const texture = loader.load(photo.src)
       texture.colorSpace = THREE.SRGBColorSpace
+      texture.minFilter = THREE.LinearMipmapLinearFilter
+      texture.magFilter = THREE.LinearFilter
+      texture.anisotropy = 8
       return texture
     })
   }, [])
@@ -81,27 +91,37 @@ function usePhotoTextures(): THREE.Texture[] {
 
 export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
   const textureArray = usePhotoTextures()
-  const lenis = useLenis()
-
   const state = useRef<CarouselState>({
-    rotation: 0,
-    targetRotation: 0,
-    selectedIndex: 0,
+    offset: selectedIndex,
+    targetOffset: selectedIndex,
   })
   const groupRef = useRef<THREE.Group>(null)
   const isDragging = useRef(false)
   const dragStart = useRef(0)
-  const rotationOnDragStart = useRef(0)
-  const lastReportedIndex = useRef(0)
-  const radiusRef = useRef(DESKTOP_RADIUS)
+  const offsetOnDragStart = useRef(0)
+  const lastReportedIndex = useRef(selectedIndex)
+  const spreadRef = useRef(DESKTOP_SPREAD)
+  const hoveredIndex = useRef<number | null>(null)
   const onSelectRef = useRef(onSelect)
+  const manualPauseFrames = useRef(0)
 
-  const photoLayouts = useMemo(
+  const photoLayouts = useMemo<PhotoLayout[]>(
     () =>
-      photos.map((photo, i) => {
-        const angle = (i / PHOTO_COUNT) * Math.PI * 2
+      Array.from({ length: DISPLAY_CARD_COUNT }, (_, i) => {
+        const photoIndex = i % PHOTO_COUNT
+        const photo = photos[photoIndex]
         const [width, height] = getPhotoDimensions(photo.aspect)
-        return { photo, angle, width, height }
+        const lanePattern = [-2, 1, -1, 2, 0, -2, 2, -1, 1]
+        return {
+          photoIndex,
+          width,
+          height,
+          phase: i * 0.61,
+          tilt: Math.sin(i * 1.13) * 0.08,
+          lane: lanePattern[i % lanePattern.length],
+          depthShift: Math.sin(i * 1.47) * 0.72,
+          sizeScale: 0.92 + Math.sin(i * 0.83) * 0.1,
+        }
       }),
     []
   )
@@ -112,53 +132,14 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
-    const applyRadius = (mobile: boolean) => {
-      radiusRef.current = mobile ? MOBILE_RADIUS : DESKTOP_RADIUS
+    const applySpread = (mobile: boolean) => {
+      spreadRef.current = mobile ? MOBILE_SPREAD : DESKTOP_SPREAD
     }
-    applyRadius(mq.matches)
-    const onChange = (e: MediaQueryListEvent) => applyRadius(e.matches)
+    applySpread(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => applySpread(e.matches)
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
-
-  useEffect(() => {
-    state.current.selectedIndex = selectedIndex
-    state.current.targetRotation =
-      -(selectedIndex / PHOTO_COUNT) * Math.PI * 2
-    lastReportedIndex.current = selectedIndex
-  }, [selectedIndex])
-
-  useEffect(() => {
-    if (!lenis) return
-
-    const handleScroll = () => {
-      if (isDragging.current) return
-
-      const section = document.getElementById('photo-gallery')
-      if (!section) return
-
-      const rect = section.getBoundingClientRect()
-      const scrollRange = rect.height - window.innerHeight
-      const progress =
-        scrollRange <= 0
-          ? 0
-          : clamp(-rect.top / scrollRange, 0, 1)
-      state.current.targetRotation = progress * Math.PI * 2
-
-      const nearest = normalizeIndex(Math.round(progress * PHOTO_COUNT))
-      if (nearest !== lastReportedIndex.current) {
-        lastReportedIndex.current = nearest
-        state.current.selectedIndex = nearest
-        onSelectRef.current(nearest)
-      }
-    }
-
-    handleScroll()
-    lenis.on('scroll', handleScroll)
-    return () => {
-      lenis.off('scroll', handleScroll)
-    }
-  }, [lenis])
 
   useEffect(() => {
     let canvas: HTMLCanvasElement | null = null
@@ -168,14 +149,14 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
       const mouseEvent = e as MouseEvent
       isDragging.current = true
       dragStart.current = mouseEvent.clientX
-      rotationOnDragStart.current = state.current.targetRotation
+      offsetOnDragStart.current = state.current.targetOffset
     }
 
     const onMouseMove = (e: Event) => {
       if (!isDragging.current) return
       const mouseEvent = e as MouseEvent
-      const delta = (mouseEvent.clientX - dragStart.current) / 200
-      state.current.targetRotation = rotationOnDragStart.current - delta
+      state.current.targetOffset =
+        offsetOnDragStart.current - (mouseEvent.clientX - dragStart.current) / 140
     }
 
     const onMouseUp = () => {
@@ -186,15 +167,14 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
       const touchEvent = e as TouchEvent
       isDragging.current = true
       dragStart.current = touchEvent.touches[0].clientX
-      rotationOnDragStart.current = state.current.targetRotation
+      offsetOnDragStart.current = state.current.targetOffset
     }
 
     const onTouchMove = (e: Event) => {
       if (!isDragging.current) return
       const touchEvent = e as TouchEvent
-      const delta =
-        (touchEvent.touches[0].clientX - dragStart.current) / 150
-      state.current.targetRotation = rotationOnDragStart.current - delta
+      state.current.targetOffset =
+        offsetOnDragStart.current - (touchEvent.touches[0].clientX - dragStart.current) / 110
     }
 
     const onTouchEnd = () => {
@@ -238,85 +218,136 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
 
   const selectPhoto = (index: number) => {
     const safeIndex = normalizeIndex(index)
-    state.current.selectedIndex = safeIndex
-    state.current.targetRotation = -(safeIndex / PHOTO_COUNT) * Math.PI * 2
+    state.current.targetOffset = safeIndex
     lastReportedIndex.current = safeIndex
+    manualPauseFrames.current = MANUAL_SELECT_PAUSE_FRAMES
     onSelectRef.current(safeIndex)
   }
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (!groupRef.current) return
 
-    state.current.rotation = THREE.MathUtils.lerp(
-      state.current.rotation,
-      state.current.targetRotation,
-      0.06
-    )
-    groupRef.current.rotation.y = state.current.rotation
+    if (manualPauseFrames.current > 0) {
+      manualPauseFrames.current -= 1
+    }
 
-    const radius = radiusRef.current
+    if (!isDragging.current && manualPauseFrames.current === 0) {
+      state.current.targetOffset += AUTO_SPEED
+    }
+
+    state.current.offset = THREE.MathUtils.lerp(
+      state.current.offset,
+      state.current.targetOffset,
+      0.055
+    )
+
+    const elapsed = clock.getElapsedTime()
+    const spread = spreadRef.current
+    const half = DISPLAY_CARD_COUNT / 2
+
     groupRef.current.children.forEach((child, i) => {
       if (!(child instanceof THREE.Mesh)) return
 
-      const photoAngle = (i / PHOTO_COUNT) * Math.PI * 2
-      const currentAngle = photoAngle + state.current.rotation
-      const normalizedAngle =
-        ((currentAngle + Math.PI) % (Math.PI * 2)) - Math.PI
-      const distFromFront = Math.abs(normalizedAngle)
-      const proximity = 1 - distFromFront / Math.PI
+      const layout = photoLayouts[i]
+      if (!layout) return
 
-      const x = Math.sin(photoAngle) * radius
-      const z = Math.cos(photoAngle) * radius
-      child.position.set(x, 0, z)
-      child.rotation.set(0, photoAngle + Math.PI, 0)
-      child.scale.setScalar(0.7 + proximity * 0.4)
+      const slot = wrapSlot(i - state.current.offset, DISPLAY_CARD_COUNT)
+      const absSlot = Math.abs(slot)
+      const side = slot === 0 ? 0 : Math.sign(slot)
+      const visibleFalloff = Math.max(0, 1 - absSlot / half)
+      const edgeLift = Math.min(absSlot / 17, 1)
+      const spiral = Math.sin((slot + state.current.offset) * 0.58 + layout.phase)
+      const hovered = hoveredIndex.current === i
+
+      const x = slot * spread
+      const y =
+        layout.lane * 0.88 +
+        Math.sin(slot * 0.36 + state.current.offset * 0.16 + layout.phase) * 0.34 +
+        spiral * 0.22
+      const z =
+        -7.8 +
+        edgeLift * 5.9 +
+        spiral * 0.9 +
+        layout.depthShift +
+        child.userData.hoverProgress * 1.05
+
+      child.position.set(x, y, z)
+      child.userData.hoverProgress = THREE.MathUtils.lerp(
+        child.userData.hoverProgress ?? 0,
+        hovered ? 1 : 0,
+        0.12
+      )
+
+      const hoverProgress = child.userData.hoverProgress as number
+      child.rotation.set(
+        THREE.MathUtils.lerp(
+          layout.tilt + spiral * 0.025,
+          0,
+          hoverProgress * 0.75
+        ),
+        THREE.MathUtils.lerp(
+          -slot * 0.145 + side * edgeLift * 0.22,
+          0,
+          hoverProgress * 0.82
+        ),
+        THREE.MathUtils.lerp(-slot * 0.018, 0, hoverProgress * 0.7)
+      )
+
+      const baseScale =
+        (0.74 + edgeLift * 0.32 + visibleFalloff * 0.08) * layout.sizeScale
+      const floatScale = Math.sin(elapsed * 0.7 + layout.phase) * 0.015
+      child.scale.setScalar(baseScale + floatScale + hoverProgress * 0.28)
 
       if (child.material instanceof THREE.MeshBasicMaterial) {
-        child.material.opacity = 0.35 + proximity * 0.65
-        const brightness = 0.55 + proximity * 0.45
+        child.material.opacity = Math.max(
+          0.22,
+          0.4 + visibleFalloff * 0.56 + hoverProgress * 0.18
+        )
+        const brightness =
+          0.56 + visibleFalloff * 0.5 + hoverProgress * 0.32
         child.material.color.setRGB(brightness, brightness, brightness)
       }
     })
+
+    const activeIndex = normalizeIndex(state.current.offset)
+    if (activeIndex !== lastReportedIndex.current) {
+      lastReportedIndex.current = activeIndex
+      onSelectRef.current(activeIndex)
+    }
   })
 
   return (
     <>
       <group ref={groupRef}>
-        {photoLayouts.map(({ photo, angle, width, height }, i) => {
-          const x = Math.sin(angle) * DESKTOP_RADIUS
-          const z = Math.cos(angle) * DESKTOP_RADIUS
-
-          return (
-            <mesh
-              key={photo.id}
-              position={[x, 0, z]}
-              rotation={[0, angle + Math.PI, 0]}
-              onClick={(e) => {
-                e.stopPropagation()
-                selectPhoto(i)
-              }}
-              onPointerOver={() => {
-                document.body.style.cursor = 'pointer'
-              }}
-              onPointerOut={() => {
-                document.body.style.cursor = 'default'
-              }}
-            >
-              <planeGeometry args={[width, height]} />
-              <meshBasicMaterial
-                map={textureArray[i]}
-                transparent
-                opacity={0.85}
-                toneMapped={false}
-              />
-            </mesh>
-          )
-        })}
+        {photoLayouts.map(({ photoIndex, width, height }, displayIndex) => (
+          <mesh
+            key={`${photos[photoIndex].id}-${displayIndex}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              selectPhoto(photoIndex)
+            }}
+            onPointerOver={() => {
+              hoveredIndex.current = displayIndex
+              document.body.style.cursor = 'pointer'
+            }}
+            onPointerOut={() => {
+              hoveredIndex.current = null
+              document.body.style.cursor = 'default'
+            }}
+          >
+            <planeGeometry args={[width, height]} />
+            <meshBasicMaterial
+              map={textureArray[photoIndex]}
+              transparent
+              opacity={0.85}
+              toneMapped={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        ))}
       </group>
 
-      <FloatingCamera
-        targetAngle={(selectedIndex / PHOTO_COUNT) * Math.PI * 2}
-      />
+      {/* <FloatingCamera targetAngle={(selectedIndex / PHOTO_COUNT) * Math.PI * 2} /> */}
     </>
   )
 }

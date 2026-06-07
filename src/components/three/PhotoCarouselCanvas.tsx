@@ -19,7 +19,7 @@ export default function PhotoCarouselCanvas({
 
   return (
     <Canvas
-      camera={{ position: [0, 0.5, 6], fov: 60 }}
+      camera={{ position: [0, 0.05, 7.8], fov: 58 }}
       gl={{ alpha: true, antialias: !isMobile }}
       dpr={isMobile ? [1, 1] : [1, 1.5]}
       style={{
