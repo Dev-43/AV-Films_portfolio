@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useLenis } from '@/lib/lenis'
+import MobileAperture from '@/components/ui/MobileAperture'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -65,6 +66,7 @@ export default function PhotoWorldIntro() {
   const [inView, setInView] = useState(false)
   const [layoutKey, setLayoutKey] = useState(0)
   const [openAmount, setOpenAmount] = useState(0)
+  const [mobileIrisVisible, setMobileIrisVisible] = useState(false)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -87,6 +89,7 @@ export default function PhotoWorldIntro() {
       if (e.matches) {
         openAmountRef.current = 0
         setOpenAmount(0)
+        setMobileIrisVisible(false)
       }
       setLayoutKey((k) => k + 1)
     }
@@ -101,22 +104,32 @@ export default function PhotoWorldIntro() {
 
     const ctx = gsap.context(() => {
       if (isMobileRef.current) {
-        if (mobileIrisRef.current) {
-          gsap.fromTo(
-            mobileIrisRef.current,
-            { opacity: 0 },
-            {
-              opacity: 1,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top bottom',
-                end: 'top 65%',
-                scrub: 1,
-              },
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 85%',
+          end: 'bottom 15%',
+          onEnter: () => setMobileIrisVisible(true),
+          onEnterBack: () => setMobileIrisVisible(true),
+          onLeave: () => setMobileIrisVisible(false),
+          onLeaveBack: () => setMobileIrisVisible(false),
+        })
+
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 80%',
+          end: 'bottom 20%',
+          scrub: 0.6,
+          onUpdate: (self) => {
+            const progress = self.progress
+            const open = Math.min(1, progress * 1.6)
+
+            if (Math.abs(open - openAmountRef.current) > 0.008) {
+              openAmountRef.current = open
+              setOpenAmount(open)
             }
-          )
-        }
+          },
+        })
+
         mobileBeatsRefs.forEach((ref) => {
           if (!ref.current) return
           gsap.fromTo(
@@ -190,26 +203,21 @@ export default function PhotoWorldIntro() {
       className="relative w-full bg-charcoal overflow-hidden"
       style={{ minHeight: '400vh' }}
     >
+      {/* Mobile — fixed iris behind beats (sticky breaks with Lenis) */}
       <div
         ref={mobileIrisRef}
-        className="block md:hidden absolute top-1/4 left-1/2 -translate-x-1/2 pointer-events-none"
-        style={{ zIndex: 1, opacity: 0 }}
+        className="fixed inset-x-0 top-0 flex justify-center pointer-events-none md:hidden"
+        style={{ zIndex: 5, height: 'min(82vw, 320px)', marginTop: '14vh' }}
       >
-        <div
-          className="w-32 h-32 rounded-full border border-avEmerald opacity-20"
-          style={{
-            boxShadow: '0 0 40px rgba(80,200,120,0.1)',
-          }}
-        />
+        <MobileAperture openAmount={openAmount} visible={mobileIrisVisible} />
       </div>
 
-      {/* Mobile layout — natural document flow */}
-      <div className="block md:hidden">
+      <div className="block md:hidden relative z-10">
         {beatContent.map((beat, i) => (
           <div
             key={i}
             ref={mobileBeatsRefs[i]}
-            className="min-h-screen flex items-center px-6 py-16"
+            className="min-h-screen flex items-end px-6 pb-24 pt-[42vh]"
           >
             <div>
               <div className="story-eyebrow">{beat.eyebrow}</div>

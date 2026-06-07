@@ -1,13 +1,138 @@
 'use client'
 
-import SectionShell from '@/components/sections/SectionShell'
+import { useState } from 'react'
+import dynamic from 'next/dynamic'
+import { photos } from '@/data/photos'
+
+const PhotoCarouselCanvas = dynamic(
+  () => import('@/components/three/PhotoCarouselCanvas'),
+  { ssr: false }
+)
+
+const PHOTO_COUNT = photos.length
+
+const FILM_GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E")`
+
+function normalizeIndex(index: number): number {
+  if (!Number.isFinite(index) || PHOTO_COUNT === 0) return 0
+  return ((Math.round(index) % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT
+}
 
 export default function PhotoGallery() {
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const safeIndex = normalizeIndex(selectedIndex)
+  const currentPhoto = photos[safeIndex]
+
+  const handleSelect = (index: number) => {
+    setSelectedIndex(normalizeIndex(index))
+  }
+
+  const goToPrev = () => {
+    setSelectedIndex((prev) => normalizeIndex(prev - 1))
+  }
+
+  const goToNext = () => {
+    setSelectedIndex((prev) => normalizeIndex(prev + 1))
+  }
+
   return (
-    <SectionShell
+    <section
       id="photo-gallery"
-      label="03 · Photo Gallery"
-      bgClass="bg-charcoal"
-    />
+      className="relative w-full bg-charcoal overflow-hidden"
+      style={{ height: '100vh', minHeight: '600px' }}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          zIndex: 5,
+          backgroundImage: FILM_GRAIN_BG,
+          opacity: 0.025,
+        }}
+      />
+
+      <div
+        className="absolute inset-0 bg-charcoal"
+        style={{ zIndex: 1 }}
+      >
+        <PhotoCarouselCanvas
+          selectedIndex={safeIndex}
+          onSelect={handleSelect}
+        />
+      </div>
+
+      <div
+        className="absolute top-6 left-4 md:left-8 z-20 pointer-events-none"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '8px',
+          letterSpacing: '0.3em',
+          color: '#50c878',
+          textTransform: 'uppercase',
+          opacity: 0.7,
+        }}
+      >
+        03 · Photo Gallery
+      </div>
+
+      <button
+        type="button"
+        aria-label="Previous photo"
+        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-11 h-11 flex items-center justify-center border border-avEmerald/30 rounded-full text-avEmerald hover:border-avEmerald transition-all"
+        style={{ fontFamily: 'var(--font-mono)' }}
+        onClick={goToPrev}
+      >
+        ←
+      </button>
+
+      <button
+        type="button"
+        aria-label="Next photo"
+        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-11 h-11 flex items-center justify-center border border-avEmerald/30 rounded-full text-avEmerald hover:border-avEmerald transition-all"
+        style={{ fontFamily: 'var(--font-mono)' }}
+        onClick={goToNext}
+      >
+        →
+      </button>
+
+      <div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9px',
+          letterSpacing: '0.3em',
+          color: '#a89f96',
+        }}
+      >
+        {String(safeIndex + 1).padStart(2, '0')}
+        &nbsp;/&nbsp;
+        {String(PHOTO_COUNT).padStart(2, '0')}
+      </div>
+
+      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none text-center">
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '9px',
+            letterSpacing: '0.3em',
+            color: '#50c878',
+            textTransform: 'uppercase',
+            marginBottom: '6px',
+          }}
+        >
+          Product Photography
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(1rem, 2vw, 1.4rem)',
+            color: '#f5f0e8',
+            fontWeight: 300,
+            fontStyle: 'italic',
+          }}
+        >
+          {currentPhoto?.year ?? ''}
+        </div>
+      </div>
+    </section>
   )
 }
