@@ -8,10 +8,14 @@ import type { AspectRatio } from '@/data/photos'
 // import { FloatingCamera } from './FloatingCamera'
 
 const PHOTO_COUNT = photos.length
-const DISPLAY_CARD_COUNT = Math.max(PHOTO_COUNT * 4, 112)
-const DESKTOP_SPREAD = 0.38
-const MOBILE_SPREAD = 0.32
-const AUTO_SPEED = 0.011
+const ROW_COUNT = 2
+const CARDS_PER_ROW = 18
+const DISPLAY_CARD_COUNT = ROW_COUNT * CARDS_PER_ROW
+const DESKTOP_RADIUS = 8.9
+const MOBILE_RADIUS = 5.8
+const DESKTOP_ROW_GAP = 2.85
+const MOBILE_ROW_GAP = 2.1
+const AUTO_SPEED = 0.0028
 const MANUAL_SELECT_PAUSE_FRAMES = 90
 
 interface CarouselState {
@@ -30,24 +34,21 @@ interface PhotoLayout {
   height: number
   phase: number
   tilt: number
-  lane: number
-  depthShift: number
   sizeScale: number
+  row: number
+  slot: number
+  angleOffset: number
 }
 
 function getPhotoDimensions(aspect: AspectRatio): [number, number] {
-  if (aspect === 'portrait') return [1.72, 2.42]
-  if (aspect === 'landscape') return [2.78, 1.86]
-  return [2.08, 2.08]
+  if (aspect === 'portrait') return [1.62, 2.3]
+  if (aspect === 'landscape') return [2.7, 1.8]
+  return [2, 2]
 }
 
 function normalizeIndex(index: number): number {
   if (!Number.isFinite(index) || PHOTO_COUNT === 0) return 0
   return ((Math.round(index) % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT
-}
-
-function wrapSlot(value: number, count: number): number {
-  return THREE.MathUtils.euclideanModulo(value + count / 2, count) - count / 2
 }
 
 function createPlaceholderTexture(): THREE.CanvasTexture {
@@ -100,7 +101,10 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
   const dragStart = useRef(0)
   const offsetOnDragStart = useRef(0)
   const lastReportedIndex = useRef(selectedIndex)
-  const spreadRef = useRef(DESKTOP_SPREAD)
+  const layoutRef = useRef({
+    radius: DESKTOP_RADIUS,
+    rowGap: DESKTOP_ROW_GAP,
+  })
   const hoveredIndex = useRef<number | null>(null)
   const onSelectRef = useRef(onSelect)
   const manualPauseFrames = useRef(0)
@@ -111,16 +115,18 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
         const photoIndex = i % PHOTO_COUNT
         const photo = photos[photoIndex]
         const [width, height] = getPhotoDimensions(photo.aspect)
-        const lanePattern = [-2, 1, -1, 2, 0, -2, 2, -1, 1]
+        const row = Math.floor(i / CARDS_PER_ROW)
+        const slot = i % CARDS_PER_ROW
         return {
           photoIndex,
           width,
           height,
           phase: i * 0.61,
           tilt: Math.sin(i * 1.13) * 0.08,
-          lane: lanePattern[i % lanePattern.length],
-          depthShift: Math.sin(i * 1.47) * 0.72,
-          sizeScale: 0.92 + Math.sin(i * 0.83) * 0.1,
+          row,
+          slot,
+          angleOffset: row * 0.16,
+          sizeScale: 0.96 + Math.sin(i * 0.83) * 0.04,
         }
       }),
     []
@@ -132,11 +138,19 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
-    const applySpread = (mobile: boolean) => {
-      spreadRef.current = mobile ? MOBILE_SPREAD : DESKTOP_SPREAD
+    const applyLayout = (mobile: boolean) => {
+      layoutRef.current = mobile
+        ? {
+            radius: MOBILE_RADIUS,
+            rowGap: MOBILE_ROW_GAP,
+          }
+        : {
+            radius: DESKTOP_RADIUS,
+            rowGap: DESKTOP_ROW_GAP,
+          }
     }
-    applySpread(mq.matches)
-    const onChange = (e: MediaQueryListEvent) => applySpread(e.matches)
+    applyLayout(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => applyLayout(e.matches)
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
@@ -231,7 +245,11 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
       manualPauseFrames.current -= 1
     }
 
-    if (!isDragging.current && manualPauseFrames.current === 0) {
+    if (
+      hoveredIndex.current === null &&
+      !isDragging.current &&
+      manualPauseFrames.current === 0
+    ) {
       state.current.targetOffset += AUTO_SPEED
     }
 
@@ -242,71 +260,94 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
     )
 
     const elapsed = clock.getElapsedTime()
-    const spread = spreadRef.current
-    const half = DISPLAY_CARD_COUNT / 2
+    const layoutConfig = layoutRef.current
 
     groupRef.current.children.forEach((child, i) => {
-      if (!(child instanceof THREE.Mesh)) return
+      if (!(child instanceof THREE.Group)) return
 
       const layout = photoLayouts[i]
       if (!layout) return
 
-      const slot = wrapSlot(i - state.current.offset, DISPLAY_CARD_COUNT)
-      const absSlot = Math.abs(slot)
-      const side = slot === 0 ? 0 : Math.sign(slot)
-      const visibleFalloff = Math.max(0, 1 - absSlot / half)
-      const edgeLift = Math.min(absSlot / 17, 1)
-      const spiral = Math.sin((slot + state.current.offset) * 0.58 + layout.phase)
+      const angleStep = (Math.PI * 2) / CARDS_PER_ROW
+      const angle =
+        (layout.slot - state.current.offset) * angleStep +
+        layout.angleOffset
+      const sinAngle = Math.sin(angle)
+      const cosAngle = Math.cos(angle)
+      const frontness = (-cosAngle + 1) / 2
+      const side = sinAngle === 0 ? 0 : Math.sign(sinAngle)
+      const rowCenter = layout.row - (ROW_COUNT - 1) / 2
+      const depthScale = 0.72 + frontness * 0.46
       const hovered = hoveredIndex.current === i
+      const currentHoverProgress =
+        typeof child.userData.hoverProgress === 'number'
+          ? child.userData.hoverProgress
+          : 0
 
-      const x = slot * spread
+      const x = sinAngle * layoutConfig.radius
       const y =
-        layout.lane * 0.88 +
-        Math.sin(slot * 0.36 + state.current.offset * 0.16 + layout.phase) * 0.34 +
-        spiral * 0.22
+        rowCenter * layoutConfig.rowGap +
+        Math.sin(elapsed * 0.18 + layout.phase) * 0.05 -
+        currentHoverProgress * 0.16
       const z =
-        -7.8 +
-        edgeLift * 5.9 +
-        spiral * 0.9 +
-        layout.depthShift +
-        child.userData.hoverProgress * 1.05
+        -4.6 -
+        cosAngle * layoutConfig.radius * 0.62 +
+        currentHoverProgress * 1.45
 
-      child.position.set(x, y, z)
       child.userData.hoverProgress = THREE.MathUtils.lerp(
-        child.userData.hoverProgress ?? 0,
+        currentHoverProgress,
         hovered ? 1 : 0,
-        0.12
+        hovered ? 0.16 : 0.09
       )
 
       const hoverProgress = child.userData.hoverProgress as number
+      child.position.set(
+        x,
+        y,
+        z + Math.sin(elapsed * 2.2 + layout.phase) * 0.05 * hoverProgress
+      )
       child.rotation.set(
         THREE.MathUtils.lerp(
-          layout.tilt + spiral * 0.025,
-          0,
-          hoverProgress * 0.75
-        ),
-        THREE.MathUtils.lerp(
-          -slot * 0.145 + side * edgeLift * 0.22,
-          0,
+          rowCenter * -0.05 + layout.tilt,
+          -0.035,
           hoverProgress * 0.82
         ),
-        THREE.MathUtils.lerp(-slot * 0.018, 0, hoverProgress * 0.7)
+        THREE.MathUtils.lerp(
+          -angle,
+          -angle + side * 0.08,
+          hoverProgress * 0.86
+        ),
+        THREE.MathUtils.lerp(
+          side * 0.08,
+          side * 0.045,
+          hoverProgress * 0.78
+        )
       )
 
       const baseScale =
-        (0.74 + edgeLift * 0.32 + visibleFalloff * 0.08) * layout.sizeScale
-      const floatScale = Math.sin(elapsed * 0.7 + layout.phase) * 0.015
-      child.scale.setScalar(baseScale + floatScale + hoverProgress * 0.28)
+        (0.72 + frontness * 0.28) * layout.sizeScale * depthScale
+      const floatScale = Math.sin(elapsed * 0.7 + layout.phase) * 0.01
+      child.scale.setScalar(baseScale + floatScale + hoverProgress * 0.36)
 
-      if (child.material instanceof THREE.MeshBasicMaterial) {
-        child.material.opacity = Math.max(
-          0.22,
-          0.4 + visibleFalloff * 0.56 + hoverProgress * 0.18
+      child.children.forEach((cardPart) => {
+        if (!(cardPart instanceof THREE.Mesh)) return
+        if (!(cardPart.material instanceof THREE.MeshBasicMaterial)) return
+
+        const opacity = Math.max(
+          0.18,
+          0.24 + frontness * 0.7 + hoverProgress * 0.12
         )
         const brightness =
-          0.56 + visibleFalloff * 0.5 + hoverProgress * 0.32
-        child.material.color.setRGB(brightness, brightness, brightness)
-      }
+          0.52 + frontness * 0.54 + hoverProgress * 0.24
+
+        if (cardPart.userData.cardRole === 'image') {
+          cardPart.material.opacity = opacity
+          cardPart.material.color.setRGB(brightness, brightness, brightness)
+        } else {
+          cardPart.material.opacity = Math.max(0.38, opacity + 0.1)
+          cardPart.material.color.setRGB(0.08, 0.08, 0.075)
+        }
+      })
     })
 
     const activeIndex = normalizeIndex(state.current.offset)
@@ -320,7 +361,7 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
     <>
       <group ref={groupRef}>
         {photoLayouts.map(({ photoIndex, width, height }, displayIndex) => (
-          <mesh
+          <group
             key={`${photos[photoIndex].id}-${displayIndex}`}
             onClick={(e) => {
               e.stopPropagation()
@@ -335,15 +376,37 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
               document.body.style.cursor = 'default'
             }}
           >
-            <planeGeometry args={[width, height]} />
-            <meshBasicMaterial
-              map={textureArray[photoIndex]}
-              transparent
-              opacity={0.85}
-              toneMapped={false}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
+            <mesh
+              position={[0, 0, 0.02]}
+              userData={{ cardRole: 'backing' }}
+            >
+              <boxGeometry args={[width + 0.16, height + 0.16, 0.08]} />
+              <meshBasicMaterial
+                color="#151311"
+                transparent
+                opacity={0.82}
+                depthTest
+                depthWrite
+                toneMapped={false}
+              />
+            </mesh>
+            <mesh
+              position={[0, 0, -0.075]}
+              userData={{ cardRole: 'image' }}
+            >
+              <planeGeometry args={[width, height]} />
+              <meshBasicMaterial
+                map={textureArray[photoIndex]}
+                transparent
+                opacity={0.92}
+                alphaTest={0.02}
+                depthTest
+                depthWrite
+                toneMapped={false}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          </group>
         ))}
       </group>
 
