@@ -6,14 +6,14 @@ export interface InstagramConfig {
 }
 
 export const instagramConfig: InstagramConfig = {
-  handle: '@avfilms', // TODO: Confirm actual handle
-  profileUrl: '#',    // TODO: Confirm actual URL
+  handle: '@a.v.films_',
+  profileUrl: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm',
   displayName: 'AV Films',
   bio: 'Photography & Videography · Pimpri, Pune',
 }
 
-// Placeholder post grid — 9 slots for the feed section
-// Replace with real embed or API when handle is confirmed
+// Post grid — 9 slots for the feed section
+// Each links to the profile page or shows real photography clips
 export interface InstagramPost {
   id: string
   thumbnail: string
@@ -22,22 +22,13 @@ export interface InstagramPost {
 }
 
 export const instagramPosts: InstagramPost[] = [
-  { id: 'ig01', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig02', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig03', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig04', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig05', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig06', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig07', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig08', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
-  { id: 'ig09', thumbnail: '/images/placeholder.svg',
-    url: '#', alt: 'AV Films on Instagram' },
+  { id: 'ig01', thumbnail: '/gallery/1 (1).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Photography' },
+  { id: 'ig02', thumbnail: '/gallery/1 (2).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Behind the scenes' },
+  { id: 'ig03', thumbnail: '/gallery/1 (3).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Portrait work' },
+  { id: 'ig04', thumbnail: '/gallery/1 (4).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Cinematic frame' },
+  { id: 'ig05', thumbnail: '/gallery/1 (5).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Studio photography' },
+  { id: 'ig06', thumbnail: '/gallery/1 (6).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Film capture' },
+  { id: 'ig07', thumbnail: '/gallery/1 (7).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Detail shot' },
+  { id: 'ig08', thumbnail: '/gallery/1 (8).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Event capture' },
+  { id: 'ig09', thumbnail: '/gallery/1 (9).webp', url: 'https://www.instagram.com/a.v.films_?igsh=ZXg3Y2N3cTZzaGxm', alt: 'AV Films on Instagram - Product showcase' },
 ]

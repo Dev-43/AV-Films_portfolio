@@ -1,0 +1,21 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#121110"/>
+  <!-- Film Grain Overlay Effect Simulation -->
+  <rect width="800" height="600" fill="#c9a84c" opacity="0.015" style="mix-blend-mode: overlay;"/>
+  
+  <!-- Subtle border -->
+  <rect x="20" y="20" width="760" height="560" rx="4" stroke="#c9a84c" stroke-width="1" stroke-opacity="0.1"/>
+  
+  <!-- Central Icon (Aperture / Film frame hybrid) -->
+  <g transform="translate(400, 300)">
+    <circle r="60" stroke="#f5f0e8" stroke-width="1.5" stroke-opacity="0.15"/>
+    <circle r="40" stroke="#c9a84c" stroke-width="1" stroke-opacity="0.25" stroke-dasharray="4 4"/>
+    
+    <!-- Camera/Lens Glyph -->
+    <path d="M-18 -12H18M-18 -12C-19.1 -12 -20 -11.1 -20 -10V18C-20 19.1 -19.1 20 -18 20H18C19.1 20 20 19.1 20 18V-10C20 -11.1 19.1 -12 18 -12M-18 -12L-12 -18H12L18 -12" stroke="#f5f0e8" stroke-width="1.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+    <circle cx="0" cy="4" r="8" stroke="#c9a84c" stroke-width="1.5" stroke-opacity="0.5"/>
+  </g>
+  
+  <!-- Monospace Label -->
+  <text x="400" y="410" fill="#a89f96" fill-opacity="0.4" font-family="monospace" font-size="10" letter-spacing="4" text-anchor="middle">AV FILMS · CAPTURE PLACEHOLDER</text>
+</svg>

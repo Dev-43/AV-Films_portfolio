@@ -33,7 +33,6 @@ interface VideoCardProps {
 
 function VideoCard({ category, index }: VideoCardProps) {
   const { title, thumbnail, previewUrl, youtubeUrl, description, count } = category
-  const cardRef = useRef<any>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const isComingSoon = !youtubeUrl
@@ -193,7 +192,7 @@ function VideoCard({ category, index }: VideoCardProps) {
 
   if (isComingSoon) {
     return (
-      <div ref={cardRef} className="video-card w-full" style={{ opacity: 0 }}>
+      <div className="video-card w-full" style={{ opacity: 0 }}>
         {cardContent}
       </div>
     )
@@ -205,7 +204,6 @@ function VideoCard({ category, index }: VideoCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Watch ${title} on YouTube`}
-      ref={cardRef}
       className="video-card block w-full"
       style={{ opacity: 0 }}
     >

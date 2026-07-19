@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import { useEffect, useRef } from 'react'
 import type Lenis from 'lenis'
 import { gsap } from 'gsap'
@@ -85,9 +86,19 @@ export default function HeroSection() {
 
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-between px-4 py-12 md:py-16 pointer-events-none">
         <div className="flex flex-col items-center gap-3 mt-8 md:mt-12">
+          <div className="relative w-16 h-16 md:w-20 md:h-20 mb-2">
+            <Image
+              src="/images/logo.png"
+              alt="AV Films Logo"
+              fill
+              className="object-contain filter brightness-[1.05]"
+              priority
+              unoptimized
+            />
+          </div>
           <h1
             style={{ fontFamily: 'var(--font-display)' }}
-            className="text-4xl md:text-6xl lg:text-7xl text-offwhite tracking-[0.25em] md:tracking-[0.35em] font-light"
+            className="text-3xl md:text-5xl lg:text-6xl text-offwhite tracking-[0.25em] md:tracking-[0.35em] font-light"
           >
             AV FILMS
           </h1>
@@ -161,7 +172,7 @@ export default function HeroSection() {
         style={{ fontFamily: 'var(--font-mono)' }}
         className="absolute top-6 right-4 md:right-8 z-20 text-[8px] text-muted tracking-[0.3em] uppercase opacity-50"
       >
-        01 / 09
+        01 / 08
       </span>
     </section>
     </>

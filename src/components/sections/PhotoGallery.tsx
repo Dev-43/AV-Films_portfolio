@@ -81,7 +81,7 @@ export default function PhotoGallery() {
           opacity: 0.7,
         }}
       >
-        03 - Photo Gallery
+        03 · Photo Gallery
       </div>
 
       <div
