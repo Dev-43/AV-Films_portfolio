@@ -64,7 +64,7 @@ export const categoryDefinitions: CategoryDefinition[] = [
   },
   {
     id: 'v07',
-    title: 'MAchinary',
+    title: 'Machinary',
     folderName: 'machinary',
     description: 'Industrial documentation and machinery in motion.',
   },
