@@ -1,111 +1,101 @@
+export interface VideoItem {
+  id: string
+  title: string
+  src: string
+  driveUrl: string
+  description: string
+  thumbnail: string
+}
+
 export interface VideoCategory {
   id: string
   title: string
-  thumbnail: string
-  previewUrl: string   // empty string = no autoplay preview, show static thumbnail only
-  youtubeUrl: string   // empty string = coming soon state
+  folderName: string
   description: string
   count: number
+  videos: VideoItem[]
+  thumbnail: string
+  previewUrl: string // URL of first video for autoplay preview
 }
 
-export const videoCategories: VideoCategory[] = [
+export interface CategoryDefinition {
+  id: string
+  title: string
+  folderName: string
+  description: string
+}
+
+export const categoryDefinitions: CategoryDefinition[] = [
   {
     id: 'v01',
-    title: 'Cinematic Film',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Cinematic storytelling for brands and artists',
-    count: 12,
+    title: 'Cinematic',
+    folderName: 'cinematic',
+    description: 'Premium cinematic films and creative storytelling.',
   },
   {
     id: 'v02',
-    title: 'Brand Commercial',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'High-impact brand identity films',
-    count: 8,
+    title: 'Clipbased',
+    folderName: 'clipbased',
+    description: 'Fast-paced, dynamic, and engaging clip reels.',
   },
   {
     id: 'v03',
-    title: 'Product Showcase',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Your product in cinematic motion',
-    count: 15,
+    title: 'DelivaryShots',
+    folderName: 'delivary_shots',
+    description: 'Cinematic restaurant and delivery service coverage.',
   },
   {
     id: 'v04',
-    title: 'ASMR',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Sensory experience films',
-    count: 6,
+    title: 'Exterior',
+    folderName: 'exterior',
+    description: 'Outdoor cinematography, scenic landscapes, and drone shots.',
   },
   {
     id: 'v05',
-    title: 'Hotel & Hospitality',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Luxury space and hospitality films',
-    count: 5,
+    title: 'Hotel',
+    folderName: 'hotel',
+    description: 'Luxury hotel, resort, and interior architecture tours.',
   },
   {
     id: 'v06',
-    title: 'Delivery Shoot',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Food delivery and restaurant content',
-    count: 10,
+    title: 'Locational video',
+    folderName: 'locational_video',
+    description: 'Destination showcases and local atmosphere captures.',
   },
   {
     id: 'v07',
-    title: 'Locational Video',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Place and destination storytelling',
-    count: 7,
+    title: 'MAchinary',
+    folderName: 'machinary',
+    description: 'Industrial documentation and machinery in motion.',
   },
   {
     id: 'v08',
-    title: 'Voice Over Production',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Narrated and voice-driven productions',
-    count: 4,
+    title: 'Makeup',
+    folderName: 'makeup',
+    description: 'High-detail makeup art and cosmetic showcase videos.',
   },
   {
     id: 'v09',
-    title: 'Machinery & Industrial',
-    thumbnail: '/images/placeholder.svg',
-    // TODO: Add preview clip URL (Cloudinary)
-    previewUrl: '',
-    // TODO: Add YouTube URL
-    youtubeUrl: '',
-    description: 'Industrial and mechanical documentation',
-    count: 9,
+    title: 'Object Focused',
+    folderName: 'object_focused',
+    description: 'Macro details, object showcases, and product focuses.',
+  },
+  {
+    id: 'v10',
+    title: 'Real estate',
+    folderName: 'real_estate',
+    description: 'Architectural walkthroughs and home tour films.',
+  },
+  {
+    id: 'v11',
+    title: 'Voice over',
+    folderName: 'voice_over',
+    description: 'Narrated commercial spots and voice-driven content.',
+  },
+  {
+    id: 'v12',
+    title: 'Our Premium Work',
+    folderName: 'premium_work',
+    description: 'The absolute pinnacle of our production quality.',
   },
 ]
