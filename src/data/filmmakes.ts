@@ -22,7 +22,7 @@ export const filmmakers: Filmmaker[] = [
     name: '', // TODO: Add cinematographer name when confirmed
     role: 'Cinematographer & Photographer',
     philosophy: 'Every frame is a decision. Every decision tells a story.',
-    image: '/images/filmmaker-1.svg',
+    image: '/images/filmmaker-1.webp',
     world: 'photo',
     accentColor: '#50c878',
     contacts: {
@@ -35,7 +35,7 @@ export const filmmakers: Filmmaker[] = [
     name: 'Vedant',
     role: 'Editor & Production Assistant',
     philosophy: 'The edit is where the story truly begins.',
-    image: '/images/filmmaker-2.svg',
+    image: '/images/filmmaker-2.webp',
     world: 'video',
     accentColor: '#c9a84c',
     contacts: {

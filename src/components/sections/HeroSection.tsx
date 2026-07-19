@@ -168,12 +168,6 @@ export default function HeroSection() {
         Pimpri · Pune
       </span>
 
-      <span
-        style={{ fontFamily: 'var(--font-mono)' }}
-        className="absolute top-6 right-4 md:right-8 z-20 text-[8px] text-muted tracking-[0.3em] uppercase opacity-50"
-      >
-        01 / 08
-      </span>
     </section>
     </>
   )

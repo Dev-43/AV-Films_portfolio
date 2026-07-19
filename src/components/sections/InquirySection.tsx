@@ -302,7 +302,7 @@ export default function InquirySection() {
                         type="date"
                         value={form.date}
                         onChange={(e) => updateField('date', e.target.value)}
-                        className="w-full bg-charcoal border border-white/5 rounded-lg px-4 py-3 text-offwhite text-sm font-sans focus:outline-none focus:border-white/20 transition-colors duration-300"
+                        className="w-full bg-charcoal border border-white/5 rounded-lg px-4 py-3 text-offwhite text-base md:text-sm font-sans focus:outline-none focus:border-white/20 transition-colors duration-300"
                       />
                     </div>
 
@@ -316,7 +316,7 @@ export default function InquirySection() {
                         placeholder="e.g. Pune, Maharashtra"
                         value={form.location}
                         onChange={(e) => updateField('location', e.target.value)}
-                        className="w-full bg-charcoal border border-white/5 rounded-lg px-4 py-3 text-offwhite text-sm font-sans placeholder:text-muted/30 focus:outline-none focus:border-white/20 transition-colors duration-300"
+                        className="w-full bg-charcoal border border-white/5 rounded-lg px-4 py-3 text-offwhite text-base md:text-sm font-sans placeholder:text-muted/30 focus:outline-none focus:border-white/20 transition-colors duration-300"
                       />
                     </div>
                   </div>
@@ -365,7 +365,7 @@ export default function InquirySection() {
                           placeholder="Your full name"
                           value={form.name}
                           onChange={(e) => updateField('name', e.target.value)}
-                          className={`w-full bg-charcoal border rounded-lg px-4 py-3 text-offwhite text-sm font-sans placeholder:text-muted/30 focus:outline-none transition-colors duration-300 ${errors.name ? 'border-red-500/50' : 'border-white/5 focus:border-white/20'}`}
+                          className={`w-full bg-charcoal border rounded-lg px-4 py-3 text-offwhite text-base md:text-sm font-sans placeholder:text-muted/30 focus:outline-none transition-colors duration-300 ${errors.name ? 'border-red-500/50' : 'border-white/5 focus:border-white/20'}`}
                         />
                         {errors.name && <span className="text-red-400 text-[10px] font-mono">{errors.name}</span>}
                       </div>
@@ -379,7 +379,7 @@ export default function InquirySection() {
                           placeholder="+91 99999 99999"
                           value={form.phone}
                           onChange={(e) => updateField('phone', e.target.value)}
-                          className={`w-full bg-charcoal border rounded-lg px-4 py-3 text-offwhite text-sm font-sans placeholder:text-muted/30 focus:outline-none transition-colors duration-300 ${errors.phone ? 'border-red-500/50' : 'border-white/5 focus:border-white/20'}`}
+                          className={`w-full bg-charcoal border rounded-lg px-4 py-3 text-offwhite text-base md:text-sm font-sans placeholder:text-muted/30 focus:outline-none transition-colors duration-300 ${errors.phone ? 'border-red-500/50' : 'border-white/5 focus:border-white/20'}`}
                         />
                         {errors.phone && <span className="text-red-400 text-[10px] font-mono">{errors.phone}</span>}
                       </div>
@@ -394,7 +394,7 @@ export default function InquirySection() {
                         placeholder="your.email@example.com"
                         value={form.email}
                         onChange={(e) => updateField('email', e.target.value)}
-                        className={`w-full bg-charcoal border rounded-lg px-4 py-3 text-offwhite text-sm font-sans placeholder:text-muted/30 focus:outline-none transition-colors duration-300 ${errors.email ? 'border-red-500/50' : 'border-white/5 focus:border-white/20'}`}
+                        className={`w-full bg-charcoal border rounded-lg px-4 py-3 text-offwhite text-base md:text-sm font-sans placeholder:text-muted/30 focus:outline-none transition-colors duration-300 ${errors.email ? 'border-red-500/50' : 'border-white/5 focus:border-white/20'}`}
                       />
                       {errors.email && <span className="text-red-400 text-[10px] font-mono">{errors.email}</span>}
                     </div>
@@ -408,7 +408,7 @@ export default function InquirySection() {
                         placeholder="Tell us about the project, style, or specific shots you need..."
                         value={form.message}
                         onChange={(e) => updateField('message', e.target.value)}
-                        className="w-full bg-charcoal border border-white/5 rounded-lg px-4 py-3 text-offwhite text-sm font-sans placeholder:text-muted/30 focus:outline-none focus:border-white/20 transition-colors duration-300 resize-none"
+                        className="w-full bg-charcoal border border-white/5 rounded-lg px-4 py-3 text-offwhite text-base md:text-sm font-sans placeholder:text-muted/30 focus:outline-none focus:border-white/20 transition-colors duration-300 resize-none"
                       />
                     </div>
                   </div>

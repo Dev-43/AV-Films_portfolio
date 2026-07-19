@@ -194,7 +194,7 @@ export default function InstagramFeed() {
           href={instagramConfig.profileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-3 px-8 py-3.5 border border-avEmerald/30 text-avEmerald text-xs md:text-sm font-mono tracking-widest uppercase rounded-full hover:bg-avEmerald hover:text-charcoal transition-all duration-300 hover:border-avEmerald hover:-translate-y-0.5"
+          className="inline-flex items-center gap-3 px-8 py-4 border border-avEmerald/30 text-avEmerald text-xs md:text-sm font-mono tracking-widest uppercase rounded-full hover:bg-avEmerald hover:text-charcoal transition-all duration-300 hover:border-avEmerald hover:-translate-y-0.5"
         >
           <InstagramIcon size={14} />
           Follow on Instagram

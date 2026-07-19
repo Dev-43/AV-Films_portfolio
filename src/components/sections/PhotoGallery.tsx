@@ -71,20 +71,6 @@ export default function PhotoGallery() {
       </div>
 
       <div
-        className="absolute top-6 left-4 md:left-8 z-20 pointer-events-none"
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: '8px',
-          letterSpacing: '0.3em',
-          color: '#50c878',
-          textTransform: 'uppercase',
-          opacity: 0.7,
-        }}
-      >
-        03 · Photo Gallery
-      </div>
-
-      <div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
         style={{
           fontFamily: 'var(--font-mono)',

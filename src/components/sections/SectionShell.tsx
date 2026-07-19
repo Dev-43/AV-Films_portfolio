@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 type SectionShellProps = {
   id: string
-  label: string
+  label?: string
   bgClass: string
   minHeightClass?: string
   children?: ReactNode
@@ -20,12 +20,6 @@ export default function SectionShell({
       id={id}
       className={`w-full max-w-full min-w-0 overflow-x-hidden flex flex-col items-center justify-center px-4 md:px-6 lg:px-8 ${minHeightClass} ${bgClass}`}
     >
-      <span
-        style={{ fontFamily: 'var(--font-mono)' }}
-        className="text-muted uppercase tracking-widest text-[9px] md:text-[10px] text-center px-2"
-      >
-        {label}
-      </span>
       {children}
     </section>
   )

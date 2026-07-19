@@ -127,18 +127,6 @@ export default function Filmmakers() {
 
         {/* Heading block */}
         <div ref={headingRef} className="mb-12 md:mb-16 w-full text-left" style={{ opacity: 0 }}>
-          <span
-            className="block mb-3"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '9px',
-              letterSpacing: '0.35em',
-              color: '#a89f96',
-              textTransform: 'uppercase',
-            }}
-          >
-            04 · Filmmakers
-          </span>
           <h2
             style={{
               fontFamily: 'var(--font-display)',

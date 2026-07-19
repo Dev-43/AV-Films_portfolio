@@ -358,16 +358,6 @@ export default function PhotoWorldIntro() {
           </div>
         </div>
       </div>
-
-      <div
-        className="fixed top-6 left-4 md:left-8 pointer-events-none transition-opacity duration-500 font-mono uppercase tracking-[0.3em] text-[8px] text-avEmerald"
-        style={{
-          zIndex: 20,
-          opacity: inView ? 0.7 : 0,
-        }}
-      >
-        02 · Photo World
-      </div>
     </section>
   )
 }

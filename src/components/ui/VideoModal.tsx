@@ -192,7 +192,7 @@ export default function VideoModal({ category, isOpen, onClose }: VideoModalProp
                     Clip Playlist ({category.videos.length})
                   </span>
 
-                  <div className="grid grid-cols-1 gap-2.5 max-h-[180px] lg:max-h-[300px] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-1 gap-2.5 max-h-[180px] lg:max-h-[300px] overflow-y-auto pr-1">
                     {category.videos.map((video) => {
                       const isActive = activeVideo?.id === video.id
                       return (
