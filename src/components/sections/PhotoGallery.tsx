@@ -1,27 +1,44 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { photos } from '@/data/photos'
+import { photos as defaultPhotos } from '@/data/photos'
+import type { Photo } from '@/data/photos'
 
 const PhotoCarouselCanvas = dynamic(
   () => import('@/components/three/PhotoCarouselCanvas'),
   { ssr: false }
 )
 
-const PHOTO_COUNT = photos.length
-
 const FILM_GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E")`
 
-function normalizeIndex(index: number): number {
-  if (!Number.isFinite(index) || PHOTO_COUNT === 0) return 0
-  return ((Math.round(index) % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT
-}
-
 export default function PhotoGallery() {
+  const [photosList, setPhotosList] = useState<Photo[]>(
+    defaultPhotos.filter((p) => p.aspect === 'landscape')
+  )
   const [selectedIndex, setSelectedIndex] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/photos')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const landscapeOnly = (data as Photo[]).filter((p) => p.aspect === 'landscape')
+          if (landscapeOnly.length > 0) setPhotosList(landscapeOnly)
+        }
+      })
+      .catch((err) => console.error('Error fetching gallery photos:', err))
+  }, [])
+
+  const PHOTO_COUNT = photosList.length
+
+  function normalizeIndex(index: number): number {
+    if (!Number.isFinite(index) || PHOTO_COUNT === 0) return 0
+    return ((Math.round(index) % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT
+  }
+
   const safeIndex = normalizeIndex(selectedIndex)
-  const currentPhoto = photos[safeIndex]
+  const currentPhoto = photosList[safeIndex]
 
   const handleSelect = (index: number) => {
     setSelectedIndex(normalizeIndex(index))
@@ -49,6 +66,7 @@ export default function PhotoGallery() {
         <PhotoCarouselCanvas
           selectedIndex={safeIndex}
           onSelect={handleSelect}
+          photos={photosList}
         />
       </div>
 
@@ -108,3 +126,4 @@ export default function PhotoGallery() {
     </section>
   )
 }
+

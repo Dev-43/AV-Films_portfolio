@@ -42,20 +42,21 @@
 > All sections live on `src/app/page.tsx` in this order:
 > 1. `<HeroSection />` — dual 3D orb entry point
 > 2. `<PhotoWorldIntro />` — emerald world opener with 3D camera scroll
-> 3. `<PhotoGallery />` — horizontal scroll pinned gallery
+> 3. `<PhotoGallery />` — horizontal 3-slide coverflow (center + two neighbors), see "Photo Gallery — Plan Change" below
 > 4. `<Filmmakers />` — bridge section, owner portraits
-> 5. `<VideoWorldIntro />` — gold world opener with 3D film reel
-> 6. `<VideoGallery />` — category grid + modal player
-> 7. `<InstagramFeed />` — live social feed
-> 8. `<InquiryForm />` — multi-step smart form
-> 9. `<Footer />` — minimal strip with filmstrip detail
+> 5. `<VideoGallery />` — card grid, autoplay preview clips + YouTube links, see "Video Gallery — Plan Change" below
+> 6. `<InstagramFeed />` — live social feed
+> 7. `<InquiryForm />` — multi-step smart form
+> 8. `<Footer />` — minimal strip with filmstrip detail
+>
+> `<VideoWorldIntro />` is REMOVED from the page — do not render it.
+> Filmmakers scrolls directly into VideoGallery now.
 >
 > ## Section IDs (used for scroll targeting)
 > - Hero: `#hero`
 > - Photo world: `#photo-world`
 > - Photo gallery: `#photo-gallery`
 > - Filmmakers: `#filmmakers`
-> - Video world: `#video-world`
 > - Video gallery: `#video-gallery`
 > - Instagram: `#instagram`
 > - Inquiry: `#inquiry`
@@ -189,17 +190,22 @@
 |---|---|---|
 | Hero | Two orbs side by side | Orbs stacked vertically, 60% size |
 | PhotoWorldIntro | 3D camera full scroll rig | Simplified CSS animation, camera still visible but no scroll-scrub |
-| PhotoGallery | Pinned horizontal scroll | Native horizontal swipe with overflow-x: auto, snap-x mandatory |
+| PhotoGallery | 3-slide coverflow, drag to move, auto-advances | Same coverflow, drag/swipe on canvas, smaller spacing (see Plan Change below) |
 | Filmmakers | Side by side portrait cards | Stacked vertically, full width |
-| VideoWorldIntro | 3D film reel scroll rig | Simplified, static 3D with idle rotation only |
-| VideoGallery | 3-4 column masonry grid | Single column, full width cards |
+| VideoGallery | 3-4 column masonry grid, preview clip autoplays (muted) when card enters viewport | 1 column mobile / 2 column tablet, same muted-autoplay-on-visible behavior |
 | InstagramFeed | 3 column grid | 2 column grid |
 | InquirySection | Full multi-step form | Same form, full width, larger tap targets |
 | Footer | Horizontal layout | Stacked vertical |
 
 ### Images & Media
 - Always use next/image with proper width and height props
-- Never autoplay video on mobile — require user interaction
+- Never autoplay video WITH SOUND on mobile — require user interaction
+  before any audio plays
+- Exception: VideoGallery card preview clips are always muted and short
+  (silent loop), so they're allowed to autoplay on scroll-into-view on both
+  desktop and mobile — this is standard muted-preview UX, not the sound-video
+  case the "no autoplay" rule is protecting against. See "Video Gallery —
+  Plan Change" below.
 - Provide loading="lazy" on all images below the fold
 
 ### Testing Breakpoints
@@ -244,20 +250,25 @@ Always verify at these widths before marking a section complete:
    />
    ```
 
- ### Videos
- - Placeholder src: `""`  (empty string)
- - Placeholder thumbnail: `"/images/placeholder.svg"`
- - Add a comment above: {/* TODO: Add video URL */}
+ ### Videos (VideoGallery cards — two separate fields, don't confuse them)
+ - `previewUrl` (short muted loop, plays inline in the card on scroll-into-view)
+   - Placeholder: `""` (empty string)
+   - Placeholder thumbnail: `"/images/placeholder.svg"`
+   - Add a comment above: {/* TODO: Add preview clip URL (Cloudinary) */}
+   - If empty, card shows the static thumbnail only — never autoplay a
+     missing/broken src
+ - `youtubeUrl` (the real published video the card links out to)
+   - Placeholder: `""` (empty string)
+   - Add comment: {/* TODO: Add YouTube URL */}
+   - Never use a real YouTube URL as placeholder
+   - Card is not clickable / shows "Coming Soon" if this is empty, even if
+     `previewUrl` is already filled in
  - Example:
    ```tsx
-   {/* TODO: Add video URL */}
-   <video src="" poster="/images/placeholder.svg" />
+   {/* TODO: Add preview clip URL (Cloudinary) */}
+   {/* TODO: Add YouTube URL */}
+   <video src="" poster="/images/placeholder.svg" muted loop playsInline />
    ```
-
- ### YouTube / Google Drive Embeds
- - Placeholder: `""` (empty string for the URL)
- - Add comment: {/* TODO: Add embed URL */}
- - Never use a real YouTube URL as placeholder
 
  ### Instagram Handle
  - Placeholder: `"@avfilms"` (to be confirmed)
@@ -296,7 +307,7 @@ no component changes needed.
 | File | Purpose |
 |---|---|
 | `src/data/photos.ts` | Product photography portfolio |
-| `src/data/videos.ts` | Video category templates |
+| `src/data/videos.ts` | Video gallery cards — each has a muted `previewUrl` clip + a `youtubeUrl` link, see "Video Gallery — Plan Change" below |
 | `src/data/filmmakers.ts` | Owner/team profile data |
 | `src/data/instagram.ts` | Studio Instagram config |
 
@@ -312,14 +323,18 @@ Each photo has an `aspect` field: `'square' | 'portrait' | 'landscape'`
 - `landscape` → wider than tall, hero/feature images
 - `square` → equal dimensions, standard product shot
 - `portrait` → taller than wide, vertical product shot
-This field controls sizing in both desktop horizontal scroll
-and mobile two-column grid — never hardcode sizes in components.
+This field controls each card's aspect/size in the coverflow
+(desktop and mobile both use the same 3-slide layout, just
+smaller spacing on mobile) — never hardcode sizes in components.
 
-### Video URL Handling
-If `videoUrl` is empty string `''`:
-- Show "Coming Soon" state in the modal
-- Never show a broken embed
-- Always show WhatsApp CTA in the coming soon state
+### Video URL Handling (updated — see "Video Gallery — Plan Change" below)
+- If `previewUrl` is `''`: card shows the static thumbnail, no autoplay
+  attempt, no broken `<video>` src.
+- If `youtubeUrl` is `''`: card is not clickable (no external link), shows a
+  "Coming Soon" badge, and always shows the WhatsApp CTA in that state.
+- If both are filled: card autoplays the muted preview on scroll-into-view
+  and is a clickable link out to `youtubeUrl` (opens YouTube in a new tab —
+  no in-site modal player anymore, see below).
 
 ### Filmmaker Contact Links
 Each filmmaker has `contacts.instagram` and `contacts.whatsapp`
@@ -343,10 +358,213 @@ If value is `'#'` — hide the button entirely, do not show a dead link
 - Cinematographer: "Every frame is a decision. Every decision tells a story."
 - Vedant: "The edit is where the story truly begins."
 
+## Photo Gallery — Plan Change (supersedes old cylinder layout)
+
+The original `PhotoGallery` implementation (`src/components/three/PhotoCarousel.tsx` +
+`PhotoCarouselCanvas.tsx`) arranges cards on a **2-row, 18-slot cylinder** using
+`angle = sin/cos` positioning. This is being replaced with a **flat horizontal
+coverflow**: one row, center slide + two visible neighbors, sliding left/right.
+Screenshot of the old cylinder result is on file — do not rebuild that shape.
+
+### What changes
+- **Layout math:** replace angle-based `sin(angle) * radius` positioning with
+  linear `x = dist * spacing`, where `dist` is the *shortest wrapped distance*
+  from the current scroll offset to a given photo index (handles the infinite
+  loop without duplicating cards — see optimization below).
+  ```
+  wrappedDistance(i, offset):
+    raw = i - offset
+    half = PHOTO_COUNT / 2
+    return ((raw + half) % PHOTO_COUNT + PHOTO_COUNT) % PHOTO_COUNT - half
+  ```
+- **Visible cards:** center slide (dist ≈ 0) full scale/opacity; immediate
+  neighbors (dist ≈ ±1) scaled down (~0.6–0.8x) and slightly faded; anything
+  beyond `CULL_DISTANCE` (~2.4 slide-widths) gets `visible = false` and skips
+  its per-frame math entirely — don't compute transforms for off-screen cards.
+- **Depth/scale falloff:** `frontness = clamp(1 - |dist| / CULL_DISTANCE, 0, 1)`
+  drives scale, opacity, and brightness the same way `frontness` did in the
+  old cylinder code — reuse that falloff pattern, just driven by linear
+  distance instead of the cosine angle term.
+- **Spacing constants:** `DESKTOP_SPACING ≈ 3.4`, `MOBILE_SPACING ≈ 2.15`
+  (existing mobile matchMedia pattern in the file already does this switch —
+  keep it, just repoint at spacing instead of radius/rowGap).
+- **Camera:** move closer / narrower FOV since there's no more depth ring to
+  read — `position: [0, 0.05, 6.2], fov: 50` (down from `[0,0.05,7.8], fov 58`)
+  in `PhotoCarouselCanvas.tsx`.
+- **Interaction:** keep drag-to-scrub, click-to-select, auto-advance, and
+  manual-select pause exactly as-is — only the position/scale math changes,
+  not the input handling.
+
+### Optimization (do this as part of the same rebuild)
+- Old layout duplicated `ROW_COUNT * CARDS_PER_ROW` = 36 card-groups across
+  2 rows even though there are only 28 photos. The wrapped-distance approach
+  makes duplication unnecessary — render exactly one card-group per photo
+  (28 total, not 36). Fewer meshes/materials updated per frame.
+- Since off-screen cards are culled (`visible = false` + early return before
+  computing position/rotation/scale/material updates), the per-frame loop
+  only does real work for ~5 cards (center + 2 neighbors each side) instead
+  of all 28–36 every frame.
+
+## Video Gallery — Plan Change (VideoWorldIntro is cancelled)
+
+Two changes here, build them together:
+
+### 1. Remove VideoWorldIntro entirely
+- Delete it from the page flow (`src/app/page.tsx`) — Filmmakers scrolls
+  straight into VideoGallery, no gold-world opener, no 3D film reel section.
+- No `#video-world` section ID anymore.
+- Any 3D film-reel component built for VideoWorldIntro is unused going
+  forward — don't wire it into VideoGallery either, this section is not 3D.
+- `avGold` (`#c9a84c`) is still the video accent color — just applied
+  directly inside VideoGallery's own styling (eyebrow labels, hover states,
+  borders, etc.) instead of a separate world section.
+
+### 2. VideoGallery cards: preview-on-scroll + real YouTube link
+Each card in `src/data/videos.ts` needs two URL fields instead of one:
+- `previewUrl` — a short, silent, looping clip (Cloudinary-hosted per the
+  existing media stack) that plays inline in the card itself
+- `youtubeUrl` — the actual published video on YouTube
+
+Behavior:
+- **On scroll into view:** the card's `previewUrl` clip autoplays, muted,
+  looped, `playsInline`. Use an `IntersectionObserver` per card (or one
+  observer watching all cards) — play when the card crosses into the
+  viewport, pause (don't just hide) when it scrolls out, so only visible
+  cards are decoding video at once. This mirrors the existing mobile-detect
+  pattern already used elsewhere in the app (`useRef` + `useEffect`, no
+  `useState` for this kind of runtime/viewport state).
+- **Muted is mandatory** — this is what makes autoplay allowed under the
+  "no autoplay" mobile rule (see updated Images & Media rule above). Never
+  unmute automatically; if a tap-to-unmute control is wanted later that's a
+  separate feature, not part of this change.
+- **On click/tap:** if `youtubeUrl` is set, the card is a link (`<a
+  target="_blank" rel="noopener noreferrer">`) that opens the real video on
+  YouTube. No in-site modal, no embedded YouTube iframe player — just an
+  outbound link. This replaces the old "film burn CSS transition modal"
+  decision.
+- **If `youtubeUrl` is empty:** card is not a link, shows a "Coming Soon"
+  badge, and shows the WhatsApp CTA (existing pattern) — same as before,
+  just no modal involved.
+- **If `previewUrl` is empty but `youtubeUrl` is set:** card shows the
+  static thumbnail (no video element mounted) but is still a working link
+  to YouTube.
+
+### Optimization
+- Cap simultaneous playing `<video>` elements — even with IntersectionObserver
+  pausing off-screen clips, don't let more play at once than are actually
+  visible in the viewport (typically 2–4 depending on grid columns). Don't
+  preload video data for cards far below the fold; use `preload="none"` or
+  `"metadata"` and only swap to the real `previewUrl` src when the card is
+  about to enter view.
+- Removing VideoWorldIntro also removes an entire 3D scene (film reel model,
+  its own scroll-triggered GSAP timeline, its own R3F canvas) from the page
+  — one less `dynamic(..., { ssr: false })` canvas mounted, which is a
+  straightforward perf win on top of the video-preview work above.
+
+### 3. Visual & Interaction Design
+This section is now a plain DOM/CSS section (no 3D canvas), so it should
+feel considered on its own terms rather than a stripped-down leftover of
+the old 3D concept. Build it with this level of intent — same bar as the
+PhotoGallery coverflow spec above.
+
+**Section numbering** — since VideoWorldIntro is gone, the eyebrow label
+numbers shift: `SectionShell label` goes from `"06 · Video Gallery"` to
+`"05 · Video Gallery"`. Check every section after this one in `page.tsx`
+(InstagramFeed, InquiryForm, Footer) and renumber their labels too.
+
+**Section header (above the grid):**
+- Eyebrow, mono font, `avGold`, uppercase, letter-spacing — matches the
+  `avEmerald` eyebrow treatment already used in PhotoGallery, just gold.
+  Use `"VIDEOGRAPHY"` as the working copy.
+  {/* TODO: Confirm eyebrow wording with client — "VIDEOGRAPHY" is a
+  placeholder, not final copy */}
+- Display heading, Cormorant Garamond, italic, large. Use *"Motion,
+  Framed."* as the working copy — this is the section's one moment of
+  typographic flourish per the "typography breaks the grid occasionally"
+  brand rule.
+  {/* TODO: Confirm display heading with client — "Motion, Framed." is a
+  placeholder, not final copy */}
+- Both are real, renderable strings (not empty/lorem) so the layout can
+  actually be tested — swap the text later, don't leave these blank in the
+  meantime. Same convention as the Philosophy Lines placeholders above.
+- Keep both left-aligned above the grid, not centered — asymmetry per the
+  "avoid perfect centering everywhere" brand rule.
+
+**Grid layout:**
+- Desktop (≥1024px): 3–4 column masonry, `avGold`-tinted 1px hairline
+  border between cards, generous gap (not edge-to-edge tiles)
+- Tablet (768–1024px): 2 columns
+- Mobile (<768px): 1 column, full width
+- Every card keeps a consistent `aspect-video` (16:9) crop for both the
+  static thumbnail and the preview clip, regardless of the category —
+  unlike PhotoGallery's variable aspect ratios, video thumbnails should
+  read as a uniform grid
+
+**Card anatomy (bottom to top, in code — stacking order):**
+1. Base layer: static thumbnail (`next/image`, from `thumbnail` field),
+   always rendered so there's never a blank card while video loads
+2. Preview layer: `<video>` using `previewUrl`, muted/loop/playsInline,
+   `preload="metadata"`, fades in over the thumbnail (opacity transition,
+   not a hard swap) once it starts playing after IntersectionObserver
+   triggers
+3. Gradient overlay: dark-to-transparent gradient anchored to the bottom
+   ~40% of the card, so text stays legible over any preview content —
+   same purpose as the gradient scrims already implicit in the emerald
+   gallery's card backing plane, just CSS instead of a 3D mesh
+4. Text block (sits on the gradient): category `title` (DM Sans, medium
+   weight, offwhite), then a mono sub-line combining `count` + category —
+   e.g. `"12 FILMS"` — then `description` truncated to ~2 lines, muted color
+5. Small YouTube glyph badge, top-right corner of the card, `avGold`,
+   low-opacity until hover/tap — signals "this opens on YouTube" without
+   needing to say so in words
+
+**Hover / focus state (desktop):**
+- Card scales to ~1.02, gradient overlay opacity increases slightly for
+  better text contrast, YouTube badge opacity goes to full, `avGold`
+  hairline border brightens — cursor becomes pointer
+- If the preview clip was paused (scrolled-past-but-cached), hovering does
+  NOT restart it from scratch — only the IntersectionObserver controls
+  play/pause, hover is purely a visual affordance, not a playback trigger
+- Do not add a sound toggle or expand-to-fullscreen affordance here — the
+  card's job is to preview and hand off to YouTube, not to become a player
+
+**Touch state (mobile):** no hover, so the gradient/title/badge are simply
+always at the "hovered" visual weight (per the Mobile-First Rules — "no
+hover-only interactions on mobile, all hover states need a touch
+equivalent")
+
+**Coming Soon state (`youtubeUrl` empty):**
+- Thumbnail rendered desaturated (CSS `grayscale` filter, ~60%), gradient
+  overlay slightly darker
+- No preview clip attempted even if `previewUrl` happens to be filled in —
+  a card without a real destination shouldn't autoplay, that's confusing
+- Mono badge, `avGold`, reading `"COMING SOON"` in place of the YouTube
+  glyph
+- Card itself is not a link / has no href / `cursor: default`
+- WhatsApp icon sits in its own small tap target in the card's corner,
+  always clickable independent of the card's disabled state (`e.stopPropagation()`
+  on its own click handler) — same "hide if '#', but here always show since
+  WhatsApp link is real" pattern as Filmmaker Contact Links
+
+**Scroll-in reveal:** since this section is no longer 3D, use a standard
+GSAP ScrollTrigger fade/stagger reveal for the grid (cards fade + translate
+up slightly, staggered ~40–60ms per card) — same technique on desktop and
+mobile since there's no pin/canvas-performance concern here, just don't pin
+the section itself (per the existing "never pin on mobile" rule, which
+doesn't apply here anyway since this section was never pinned to begin
+with).
+
+**Accessibility:**
+- `<video>` elements: `muted`, no visible controls, `aria-hidden="true"`
+  (the video is decorative preview, not the primary content)
+- The outbound link itself needs a real accessible name, e.g.
+  `aria-label={`Watch ${title} on YouTube`}` — don't rely on the YouTube
+  glyph alone to convey that
+
 ## Completed Sections
 Do not rebuild these. Do not modify unless fixing a bug.
 
-- ✅ Skeleton — 9 section shells, all IDs correct
+- ✅ Skeleton — 8 section shells (was 9 before VideoWorldIntro was cut), all IDs correct — renumber eyebrow labels per "Video Gallery — Plan Change" above
 - ✅ SmoothScroll — Lenis + GSAP ticker wired
 - ✅ Hero Part 1 — Wordmark, tagline, layout shell
 - ✅ Hero Part 2 — Lenis scroll progress bar (gold)
@@ -360,9 +578,10 @@ Do not rebuild these. Do not modify unless fixing a bug.
   with aperture iris)
 - ⏳ PhotoWorldIntro Part 2b — Aperture iris (next)
 - ⏳ PhotoWorldIntro Part 3 — Scroll-driven movement
-- ⏳ PhotoGallery
+- ✅ PhotoGallery — Dynamic WebP/PNG scanning from public/gallery/, flat horizontal coverflow, Next.js image optimization, landscape-only filter
 - ⏳ Filmmakers
-- ⏳ VideoWorldIntro (retro projector)
+- ❌ VideoWorldIntro (retro projector) — CANCELLED, section removed from
+  page entirely, do not build
 - ⏳ VideoGallery
 - ⏳ InstagramFeed
 - ⏳ InquiryForm
@@ -374,11 +593,14 @@ These are final — do not revisit without user confirmation.
 - Theme: Emerald (#50c878) for photo, Gold (#c9a84c) for video
 - Background: Warm charcoal #0d0c0b across ALL sections
 - Photo World 3D: Aperture iris (NOT a camera model)
-- Video World 3D: Retro film projector with spinning reels
-- Photo gallery: Horizontal scroll desktop, two-col mobile grid
+- VideoWorldIntro: REMOVED — no gold world opener, no film reel 3D, no
+  standalone video-world section. Video section is VideoGallery only.
+- Photo gallery: 3-slide horizontal coverflow (center + two neighbors), NOT the old two-row cylinder — see "Photo Gallery — Plan Change" below
 - Photo gallery lightbox: Swipe navigation on mobile
 - Filmmakers transition: Dark fade → portraits emerge from black
 - Filmmaker contacts: Hide button if value is '#'
-- Video modal: Film burn CSS transition, Coming Soon if URL empty
+- Video gallery: cards autoplay a muted preview clip when scrolled into
+  view; clicking/tapping a card opens the real video on YouTube in a new
+  tab; no in-site modal player — see "Video Gallery — Plan Change" below
 - Inquiry form: WhatsApp primary + Resend email backup
 - Instagram: Static grid placeholder until handle confirmed

@@ -3,29 +3,12 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { photos } from '@/data/photos'
-import type { AspectRatio } from '@/data/photos'
-// import { FloatingCamera } from './FloatingCamera'
-
-const PHOTO_COUNT = photos.length
-const ROW_COUNT = 2
-const CARDS_PER_ROW = 18
-const DISPLAY_CARD_COUNT = ROW_COUNT * CARDS_PER_ROW
-const DESKTOP_RADIUS = 8.9
-const MOBILE_RADIUS = 5.8
-const DESKTOP_ROW_GAP = 2.85
-const MOBILE_ROW_GAP = 2.1
-const AUTO_SPEED = 0.0028
-const MANUAL_SELECT_PAUSE_FRAMES = 90
-
-interface CarouselState {
-  offset: number
-  targetOffset: number
-}
+import type { Photo, AspectRatio } from '@/data/photos'
 
 interface PhotoCarouselProps {
   selectedIndex: number
   onSelect: (index: number) => void
+  photosList: Photo[]
 }
 
 interface PhotoLayout {
@@ -35,10 +18,11 @@ interface PhotoLayout {
   phase: number
   tilt: number
   sizeScale: number
-  row: number
   slot: number
-  angleOffset: number
 }
+
+const AUTO_SPEED = 0.0014
+const MANUAL_SELECT_PAUSE_FRAMES = 90
 
 function getPhotoDimensions(aspect: AspectRatio): [number, number] {
   if (aspect === 'portrait') return [1.62, 2.3]
@@ -46,9 +30,15 @@ function getPhotoDimensions(aspect: AspectRatio): [number, number] {
   return [2, 2]
 }
 
-function normalizeIndex(index: number): number {
-  if (!Number.isFinite(index) || PHOTO_COUNT === 0) return 0
-  return ((Math.round(index) % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT
+function normalizeIndex(index: number, count: number): number {
+  if (!Number.isFinite(index) || count === 0) return 0
+  return ((Math.round(index) % count) + count) % count
+}
+
+function wrappedDistance(i: number, offset: number, count: number): number {
+  const raw = i - offset
+  const half = count / 2
+  return ((raw + half) % count + count) % count - half
 }
 
 function createPlaceholderTexture(): THREE.CanvasTexture {
@@ -71,39 +61,43 @@ function createPlaceholderTexture(): THREE.CanvasTexture {
   return texture
 }
 
-function usePhotoTextures(): THREE.Texture[] {
+function usePhotoTextures(photosList: Photo[]): THREE.Texture[] {
   return useMemo(() => {
     const placeholder = createPlaceholderTexture()
     const loader = new THREE.TextureLoader()
     loader.setCrossOrigin('anonymous')
 
-    return photos.map((photo) => {
+    return photosList.map((photo) => {
       if (photo.src.endsWith('.svg')) return placeholder
 
-      const texture = loader.load(photo.src)
+      // Use Next.js Image Optimization API to convert PNG/JPEG to WebP/AVIF and scale it down
+      const optimizedSrc = `/_next/image?url=${encodeURIComponent(photo.src)}&w=1080&q=75`
+      const texture = loader.load(optimizedSrc)
       texture.colorSpace = THREE.SRGBColorSpace
       texture.minFilter = THREE.LinearMipmapLinearFilter
       texture.magFilter = THREE.LinearFilter
       texture.anisotropy = 8
       return texture
     })
-  }, [])
+  }, [photosList])
 }
 
-export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
-  const textureArray = usePhotoTextures()
-  const state = useRef<CarouselState>({
+export function PhotoCarousel({ selectedIndex, onSelect, photosList }: PhotoCarouselProps) {
+  const PHOTO_COUNT = photosList.length
+  const textureArray = usePhotoTextures(photosList)
+  
+  const state = useRef({
     offset: selectedIndex,
     targetOffset: selectedIndex,
   })
+  
   const groupRef = useRef<THREE.Group>(null)
   const isDragging = useRef(false)
   const dragStart = useRef(0)
   const offsetOnDragStart = useRef(0)
   const lastReportedIndex = useRef(selectedIndex)
   const layoutRef = useRef({
-    radius: DESKTOP_RADIUS,
-    rowGap: DESKTOP_ROW_GAP,
+    spacing: 3.4,
   })
   const hoveredIndex = useRef<number | null>(null)
   const onSelectRef = useRef(onSelect)
@@ -111,25 +105,19 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
 
   const photoLayouts = useMemo<PhotoLayout[]>(
     () =>
-      Array.from({ length: DISPLAY_CARD_COUNT }, (_, i) => {
-        const photoIndex = i % PHOTO_COUNT
-        const photo = photos[photoIndex]
+      photosList.map((photo, i) => {
         const [width, height] = getPhotoDimensions(photo.aspect)
-        const row = Math.floor(i / CARDS_PER_ROW)
-        const slot = i % CARDS_PER_ROW
         return {
-          photoIndex,
+          photoIndex: i,
           width,
           height,
           phase: i * 0.61,
-          tilt: Math.sin(i * 1.13) * 0.08,
-          row,
-          slot,
-          angleOffset: row * 0.16,
-          sizeScale: 0.96 + Math.sin(i * 0.83) * 0.04,
+          tilt: Math.sin(i * 1.13) * 0.06,
+          slot: i,
+          sizeScale: 0.98 + Math.sin(i * 0.83) * 0.02,
         }
       }),
-    []
+    [photosList]
   )
 
   useEffect(() => {
@@ -139,15 +127,9 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
     const applyLayout = (mobile: boolean) => {
-      layoutRef.current = mobile
-        ? {
-            radius: MOBILE_RADIUS,
-            rowGap: MOBILE_ROW_GAP,
-          }
-        : {
-            radius: DESKTOP_RADIUS,
-            rowGap: DESKTOP_ROW_GAP,
-          }
+      layoutRef.current = {
+        spacing: mobile ? 2.15 : 3.4,
+      }
     }
     applyLayout(mq.matches)
     const onChange = (e: MediaQueryListEvent) => applyLayout(e.matches)
@@ -231,15 +213,20 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
   }, [])
 
   const selectPhoto = (index: number) => {
-    const safeIndex = normalizeIndex(index)
-    state.current.targetOffset = safeIndex
+    const safeIndex = normalizeIndex(index, PHOTO_COUNT)
+    state.current.targetOffset = index // Keep the offset running (don't force clamp targetOffset to keep wrap feel)
+    // Adjust targetOffset so it snaps to the nearest equivalent of index
+    const currentOffset = state.current.offset
+    const diff = wrappedDistance(index, currentOffset, PHOTO_COUNT)
+    state.current.targetOffset = currentOffset + diff
+    
     lastReportedIndex.current = safeIndex
     manualPauseFrames.current = MANUAL_SELECT_PAUSE_FRAMES
     onSelectRef.current(safeIndex)
   }
 
   useFrame(({ clock }) => {
-    if (!groupRef.current) return
+    if (!groupRef.current || PHOTO_COUNT === 0) return
 
     if (manualPauseFrames.current > 0) {
       manualPauseFrames.current -= 1
@@ -261,6 +248,8 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
 
     const elapsed = clock.getElapsedTime()
     const layoutConfig = layoutRef.current
+    const spacing = layoutConfig.spacing
+    const CULL_DISTANCE = 2.4
 
     groupRef.current.children.forEach((child, i) => {
       if (!(child instanceof THREE.Group)) return
@@ -268,31 +257,24 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
       const layout = photoLayouts[i]
       if (!layout) return
 
-      const angleStep = (Math.PI * 2) / CARDS_PER_ROW
-      const angle =
-        (layout.slot - state.current.offset) * angleStep +
-        layout.angleOffset
-      const sinAngle = Math.sin(angle)
-      const cosAngle = Math.cos(angle)
-      const frontness = (-cosAngle + 1) / 2
-      const side = sinAngle === 0 ? 0 : Math.sign(sinAngle)
-      const rowCenter = layout.row - (ROW_COUNT - 1) / 2
-      const depthScale = 0.72 + frontness * 0.46
+      // Compute wrapped distance for looped layout
+      const dist = wrappedDistance(i, state.current.offset, PHOTO_COUNT)
+
+      // Cull off-screen slides
+      if (Math.abs(dist) > CULL_DISTANCE) {
+        child.visible = false
+        return
+      }
+
+      child.visible = true
+
+      // Math falloffs
+      const frontness = Math.max(0, Math.min(1, 1 - Math.abs(dist) / CULL_DISTANCE))
       const hovered = hoveredIndex.current === i
       const currentHoverProgress =
         typeof child.userData.hoverProgress === 'number'
           ? child.userData.hoverProgress
           : 0
-
-      const x = sinAngle * layoutConfig.radius
-      const y =
-        rowCenter * layoutConfig.rowGap +
-        Math.sin(elapsed * 0.18 + layout.phase) * 0.05 -
-        currentHoverProgress * 0.16
-      const z =
-        -4.6 -
-        cosAngle * layoutConfig.radius * 0.62 +
-        currentHoverProgress * 1.45
 
       child.userData.hoverProgress = THREE.MathUtils.lerp(
         currentHoverProgress,
@@ -301,44 +283,48 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
       )
 
       const hoverProgress = child.userData.hoverProgress as number
+
+      // Positions
+      const x = dist * spacing
+      const y =
+        Math.sin(elapsed * 0.18 + layout.phase) * 0.05 -
+        hoverProgress * 0.16
+      const z =
+        -Math.abs(dist) * 1.5 +
+        hoverProgress * 1.45
+
       child.position.set(
         x,
         y,
         z + Math.sin(elapsed * 2.2 + layout.phase) * 0.05 * hoverProgress
       )
+
+      // Rotations: face camera mostly, tilt slightly towards center if not hovered
+      const tiltX = layout.tilt
+      const rotY = -dist * 0.22
+      const rotZ = -dist * 0.03
+
       child.rotation.set(
-        THREE.MathUtils.lerp(
-          rowCenter * -0.05 + layout.tilt,
-          -0.035,
-          hoverProgress * 0.82
-        ),
-        THREE.MathUtils.lerp(
-          -angle,
-          -angle + side * 0.08,
-          hoverProgress * 0.86
-        ),
-        THREE.MathUtils.lerp(
-          side * 0.08,
-          side * 0.045,
-          hoverProgress * 0.78
-        )
+        THREE.MathUtils.lerp(tiltX, 0, hoverProgress),
+        THREE.MathUtils.lerp(rotY, 0, hoverProgress),
+        THREE.MathUtils.lerp(rotZ, 0, hoverProgress)
       )
 
-      const baseScale =
-        (0.72 + frontness * 0.28) * layout.sizeScale * depthScale
+      // Scaling
+      const baseScale = (0.68 + frontness * 0.32) * layout.sizeScale
       const floatScale = Math.sin(elapsed * 0.7 + layout.phase) * 0.01
-      child.scale.setScalar(baseScale + floatScale + hoverProgress * 0.36)
+      child.scale.setScalar(baseScale + floatScale + hoverProgress * 0.32)
 
+      // Material opacities & colors
       child.children.forEach((cardPart) => {
         if (!(cardPart instanceof THREE.Mesh)) return
         if (!(cardPart.material instanceof THREE.MeshBasicMaterial)) return
 
         const opacity = Math.max(
-          0.18,
-          0.24 + frontness * 0.7 + hoverProgress * 0.12
+          0.12,
+          0.2 + frontness * 0.75 + hoverProgress * 0.05
         )
-        const brightness =
-          0.52 + frontness * 0.54 + hoverProgress * 0.24
+        const brightness = 0.48 + frontness * 0.52 + hoverProgress * 0.2
 
         if (cardPart.userData.cardRole === 'image') {
           cardPart.material.opacity = opacity
@@ -350,7 +336,7 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
       })
     })
 
-    const activeIndex = normalizeIndex(state.current.offset)
+    const activeIndex = normalizeIndex(state.current.offset, PHOTO_COUNT)
     if (activeIndex !== lastReportedIndex.current) {
       lastReportedIndex.current = activeIndex
       onSelectRef.current(activeIndex)
@@ -358,59 +344,42 @@ export function PhotoCarousel({ selectedIndex, onSelect }: PhotoCarouselProps) {
   })
 
   return (
-    <>
-      <group ref={groupRef}>
-        {photoLayouts.map(({ photoIndex, width, height }, displayIndex) => (
-          <group
-            key={`${photos[photoIndex].id}-${displayIndex}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              selectPhoto(photoIndex)
-            }}
-            onPointerOver={() => {
-              hoveredIndex.current = displayIndex
-              document.body.style.cursor = 'pointer'
-            }}
-            onPointerOut={() => {
-              hoveredIndex.current = null
-              document.body.style.cursor = 'default'
-            }}
+    <group ref={groupRef}>
+      {photoLayouts.map(({ photoIndex, width, height }) => (
+        <group
+          key={photosList[photoIndex].id}
+          onClick={(e) => {
+            e.stopPropagation()
+            selectPhoto(photoIndex)
+          }}
+          onPointerOver={() => {
+            hoveredIndex.current = photoIndex
+            document.body.style.cursor = 'pointer'
+          }}
+          onPointerOut={() => {
+            hoveredIndex.current = null
+            document.body.style.cursor = 'default'
+          }}
+        >
+          {/* Front Image Mesh */}
+          <mesh
+            position={[0, 0, 0]}
+            userData={{ cardRole: 'image' }}
           >
-            <mesh
-              position={[0, 0, 0.02]}
-              userData={{ cardRole: 'backing' }}
-            >
-              <boxGeometry args={[width + 0.16, height + 0.16, 0.08]} />
-              <meshBasicMaterial
-                color="#151311"
-                transparent
-                opacity={0.82}
-                depthTest
-                depthWrite
-                toneMapped={false}
-              />
-            </mesh>
-            <mesh
-              position={[0, 0, -0.075]}
-              userData={{ cardRole: 'image' }}
-            >
-              <planeGeometry args={[width, height]} />
-              <meshBasicMaterial
-                map={textureArray[photoIndex]}
-                transparent
-                opacity={0.92}
-                alphaTest={0.02}
-                depthTest
-                depthWrite
-                toneMapped={false}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          </group>
-        ))}
-      </group>
-
-      {/* <FloatingCamera targetAngle={(selectedIndex / PHOTO_COUNT) * Math.PI * 2} /> */}
-    </>
+            <planeGeometry args={[width, height]} />
+            <meshBasicMaterial
+              map={textureArray[photoIndex]}
+              transparent
+              opacity={0.92}
+              alphaTest={0.02}
+              depthTest
+              depthWrite
+              toneMapped={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
   )
 }

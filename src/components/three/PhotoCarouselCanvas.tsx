@@ -3,15 +3,18 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PhotoCarousel } from './PhotoCarousel'
+import type { Photo } from '@/data/photos'
 
 interface PhotoCarouselCanvasProps {
   selectedIndex: number
   onSelect: (index: number) => void
+  photos: Photo[]
 }
 
 export default function PhotoCarouselCanvas({
   selectedIndex,
   onSelect,
+  photos,
 }: PhotoCarouselCanvasProps) {
   const isMobile =
     typeof window !== 'undefined' &&
@@ -19,7 +22,7 @@ export default function PhotoCarouselCanvas({
 
   return (
     <Canvas
-      camera={{ position: [0, 0.05, 7.8], fov: 58 }}
+      camera={{ position: [0, 0.05, 6.2], fov: 50 }}
       gl={{ alpha: true, antialias: !isMobile }}
       dpr={isMobile ? [1, 1] : [1, 1.5]}
       style={{
@@ -45,6 +48,7 @@ export default function PhotoCarouselCanvas({
         <PhotoCarousel
           selectedIndex={selectedIndex}
           onSelect={onSelect}
+          photosList={photos}
         />
       </Suspense>
     </Canvas>

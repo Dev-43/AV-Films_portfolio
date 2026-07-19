@@ -6,7 +6,7 @@ export default function InstagramFeed() {
   return (
     <SectionShell
       id="instagram"
-      label="07 · Instagram"
+      label="06 · Instagram"
       bgClass="bg-charcoal"
     />
   )
