@@ -121,3 +121,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Large media and executables — never commit these to git
+# Upload videos to Google Drive / Cloudinary instead
+public/images/*.mp3
+public/images/*.mp4
+public/images/*.wav
+public/images/*.exe
+public/images/*.msi
+public/images/*.dmg
+*.exe
+*.msi
+*.dmg

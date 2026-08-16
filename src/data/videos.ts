@@ -1,3 +1,5 @@
+export type VideoSourceType = 'local' | 'youtube' | 'vimeo' | 'drive' | 'direct'
+
 export interface VideoItem {
   id: string
   title: string
@@ -5,6 +7,8 @@ export interface VideoItem {
   driveUrl: string
   description: string
   thumbnail: string
+  sourceType: VideoSourceType
+  embedUrl?: string // set for 'youtube' | 'vimeo' | 'drive'
 }
 
 export interface VideoCategory {

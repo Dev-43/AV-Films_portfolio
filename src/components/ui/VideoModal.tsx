@@ -60,7 +60,7 @@ export default function VideoModal({ category, isOpen, onClose }: VideoModalProp
   // Auto-play active video when selected
   useEffect(() => {
     const video = videoRef.current
-    if (video && activeVideo) {
+    if (video && activeVideo && (activeVideo.sourceType === 'local' || activeVideo.sourceType === 'direct')) {
       video.load()
       video.play().catch(() => {
         // Handle auto-play constraints
@@ -108,7 +108,25 @@ export default function VideoModal({ category, isOpen, onClose }: VideoModalProp
 
           {/* Left panel: Custom Video Player */}
           <div className="flex-1 bg-black flex items-center justify-center relative aspect-video lg:aspect-auto overflow-hidden">
-            {activeVideo ? (
+            {activeVideo && (activeVideo.sourceType === 'youtube' || activeVideo.sourceType === 'vimeo') ? (
+              <iframe
+                key={activeVideo.id}
+                src={`${activeVideo.embedUrl}${activeVideo.sourceType === 'youtube' ? '&' : '?'}autoplay=1`}
+                className="w-full h-full"
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                allowFullScreen
+                title={`Playing ${activeVideo.title}`}
+              />
+            ) : activeVideo && activeVideo.sourceType === 'drive' ? (
+              <iframe
+                key={activeVideo.id}
+                src={activeVideo.embedUrl}
+                className="w-full h-full"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                title={`Playing ${activeVideo.title}`}
+              />
+            ) : activeVideo ? (
               <video
                 ref={videoRef}
                 src={activeVideo.src}
@@ -232,7 +250,11 @@ export default function VideoModal({ category, isOpen, onClose }: VideoModalProp
                               {video.title}
                             </span>
                             <span className="text-[9px] text-muted block mt-0.5 font-mono">
-                              {video.driveUrl ? 'Drive file ready' : 'Preview only'}
+                              {video.sourceType === 'youtube' || video.sourceType === 'vimeo'
+                                ? 'External Video'
+                                : video.driveUrl
+                                ? 'Drive file ready'
+                                : 'Preview only'}
                             </span>
                           </div>
                         </button>

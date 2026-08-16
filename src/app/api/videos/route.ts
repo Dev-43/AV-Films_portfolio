@@ -7,6 +7,29 @@ import type { VideoCategory, VideoItem } from '@/data/videos'
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.webm', '.ogg', '.m4v']
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.svg']
 
+function resolveLinkVideo(url: string): { sourceType: 'youtube' | 'vimeo' | 'drive' | 'direct'; src: string; embedUrl?: string } {
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/)
+  if (ytMatch) {
+    return { sourceType: 'youtube', src: url, embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?rel=0` }
+  }
+
+  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+  if (vimeoMatch) {
+    return { sourceType: 'vimeo', src: url, embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}` }
+  }
+
+  // Google Drive share link — extract the file ID out of either
+  // /file/d/{ID}/view or ?id={ID} style URLs
+  const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/([\w-]+)|open\?id=([\w-]+)|uc\?id=([\w-]+))/)
+  if (driveMatch) {
+    const fileId = driveMatch[1] || driveMatch[2] || driveMatch[3]
+    return { sourceType: 'drive', src: url, embedUrl: `https://drive.google.com/file/d/${fileId}/preview` }
+  }
+
+  // Direct file link (Cloudinary etc.) — native <video> playback
+  return { sourceType: 'direct', src: url }
+}
+
 export async function GET() {
   const publicDir = path.join(process.cwd(), 'public')
   const videosBaseDir = path.join(publicDir, 'videos')
@@ -38,7 +61,7 @@ export async function GET() {
       const imageFiles = new Map<string, string>() // baseName -> file name with ext
 
       // Parse metadata.json if present
-      let localMetadata: Record<string, { title?: string; description?: string; driveUrl?: string }> = {}
+      let localMetadata: Record<string, { title?: string; description?: string; driveUrl?: string; url?: string; thumbnail?: string }> = {}
       const metadataPath = path.join(catDir, 'metadata.json')
       if (fs.existsSync(metadataPath)) {
         try {
@@ -117,6 +140,53 @@ export async function GET() {
           driveUrl,
           description,
           thumbnail,
+          sourceType: 'local',
+        }
+      })
+
+      // Parse and append link items from metadata.json
+      let linkIdx = 0
+      Object.entries(localMetadata).forEach(([key, entry]) => {
+        if (entry && entry.url) {
+          const isLocalFile = videoFiles.some((f) => {
+            const nameWithoutExt = path.parse(f).name
+            return f === key || nameWithoutExt === key
+          })
+
+          if (!isLocalFile) {
+            linkIdx++
+            const resolved = resolveLinkVideo(entry.url)
+            
+            // 1. Determine Title
+            const title = entry.title || key
+              .replace(/[-_]/g, ' ')
+              .replace(/\b\w/g, (char) => char.toUpperCase())
+
+            // 2. Determine Description
+            const description = entry.description || `Showcase clip in ${cat.title}`
+
+            // 3. Determine Drive URL
+            const driveUrl = entry.driveUrl || (resolved.sourceType === 'drive' ? entry.url : '')
+
+            // 4. Find Video Thumbnail
+            let thumbnail = '/images/placeholder.svg'
+            if (entry.thumbnail) {
+              thumbnail = entry.thumbnail
+            } else if (imageFiles.has(key.toLowerCase())) {
+              thumbnail = `/videos/${catDirName}/${imageFiles.get(key.toLowerCase())}`
+            }
+
+            videoItems.push({
+              id: `${cat.id}_link_${linkIdx}`,
+              title,
+              src: resolved.src,
+              driveUrl,
+              description,
+              thumbnail,
+              sourceType: resolved.sourceType,
+              embedUrl: resolved.embedUrl,
+            })
+          }
         }
       })
 
@@ -137,8 +207,9 @@ export async function GET() {
         catThumbnail = videoItems[0].thumbnail
       }
 
-      // Determine category preview video URL
-      const previewUrl = videoItems.length > 0 ? videoItems[0].src : ''
+      // Determine category preview video URL - only from 'local' or 'direct' videos
+      const previewItem = videoItems.find((item) => item.sourceType === 'local' || item.sourceType === 'direct')
+      const previewUrl = previewItem ? previewItem.src : ''
 
       return {
         id: cat.id,

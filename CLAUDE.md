@@ -564,7 +564,7 @@ with).
 ## Completed Sections
 Do not rebuild these. Do not modify unless fixing a bug.
 
-- ✅ Skeleton — 8 section shells (was 9 before VideoWorldIntro was cut), all IDs correct — renumber eyebrow labels per "Video Gallery — Plan Change" above
+- ✅ Skeleton — 8 section shells (was 9 before VideoWorldIntro was cut), all IDs correct
 - ✅ SmoothScroll — Lenis + GSAP ticker wired
 - ✅ Hero Part 1 — Wordmark, tagline, layout shell
 - ✅ Hero Part 2 — Lenis scroll progress bar (gold)
@@ -574,18 +574,16 @@ Do not rebuild these. Do not modify unless fixing a bug.
 - ✅ Hero Material — MeshPhysicalMaterial, Environment preset
 - ✅ Data Layer — src/data/ (photos, videos, filmmakers, instagram)
 - ✅ PhotoWorldIntro Part 1 — Story beats, GSAP scroll reveal
-- ✅ PhotoWorldIntro Part 2 — Camera model (to be replaced
-  with aperture iris)
-- ⏳ PhotoWorldIntro Part 2b — Aperture iris (next)
-- ⏳ PhotoWorldIntro Part 3 — Scroll-driven movement
+- ✅ PhotoWorldIntro Part 2 — Camera model (replaced with aperture iris)
+- ✅ PhotoWorldIntro Part 2b — Aperture iris
+- ✅ PhotoWorldIntro Part 3 — Scroll-driven movement
 - ✅ PhotoGallery — Dynamic WebP/PNG scanning from public/gallery/, flat horizontal coverflow, Next.js image optimization, landscape-only filter
-- ⏳ Filmmakers
-- ❌ VideoWorldIntro (retro projector) — CANCELLED, section removed from
-  page entirely, do not build
-- ⏳ VideoGallery
-- ⏳ InstagramFeed
-- ⏳ InquiryForm
-- ⏳ Footer
+- ✅ Filmmakers — WebP portraits, stacked mobile layouts, personal contact logic
+- ❌ VideoWorldIntro (retro projector) — CANCELLED, section removed from page entirely
+- ✅ VideoGallery — Dynamic folder scanning, autoplay scroll previews, modal overlay video player with Drive download links
+- ✅ InstagramFeed — Curated grid with WebP photos, follow CTA, custom hover effects
+- ✅ InquiryForm — Multi-step smart form, phone validation, native WhatsApp redirection + backing Resend email endpoint
+- ✅ Footer — Quick navigation links, phone/location contacts, and custom CSS-based filmstrip signature divider
 
 ## Design Decisions Locked
 These are final — do not revisit without user confirmation.
